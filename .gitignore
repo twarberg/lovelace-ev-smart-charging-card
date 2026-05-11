@@ -1,0 +1,6 @@
+node_modules/
+dist/*.map
+.vitest/
+coverage/
+.DS_Store
+*.log
