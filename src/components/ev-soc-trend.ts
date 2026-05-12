@@ -37,11 +37,31 @@ export class EvSocTrend extends LitElement {
     }
     .graph-wrap {
       margin: 0;
+      position: relative;
     }
     svg {
       width: 100%;
       height: 60px;
       display: block;
+    }
+    .date-line {
+      stroke: ${unsafeCSS(cssVar("secondaryText", "#94a3b8"))};
+      stroke-width: 1;
+      stroke-dasharray: 3 3;
+      opacity: 0.6;
+      pointer-events: none;
+      vector-effect: non-scaling-stroke;
+    }
+    .date-label {
+      position: absolute;
+      top: 0;
+      transform: translateX(2px);
+      color: ${unsafeCSS(cssVar("secondaryText", "#94a3b8"))};
+      font-size: 9px;
+      font-weight: 500;
+      line-height: 1;
+      pointer-events: none;
+      white-space: nowrap;
     }
     .empty { color: ${unsafeCSS(cssVar("secondaryText", "#94a3b8"))}; font-style: italic; }
     .sr-only {
@@ -89,6 +109,18 @@ export class EvSocTrend extends LitElement {
       })
       .join(" ");
 
+    const dividers: { x: number; pct: number; label: string }[] = [];
+    const first = new Date(tStart);
+    const firstMidnight = new Date(first.getFullYear(), first.getMonth(), first.getDate() + 1).getTime();
+    for (let t = firstMidnight; t < tEnd; t += 86_400_000) {
+      const pct = (t - tStart) / span;
+      dividers.push({
+        x: pct * W,
+        pct,
+        label: new Date(t).toLocaleDateString([], { weekday: "short", day: "2-digit" }),
+      });
+    }
+
     return html`
       <div class="tile">
         <h3 id="soc-title">SoC — ${this.days}d</h3>
@@ -102,8 +134,21 @@ export class EvSocTrend extends LitElement {
             @mousemove=${this._onMove(samples)}
             @mouseleave=${this._onLeave}
           >
+            ${dividers.map(
+              (d) => html`<line
+                class="date-line"
+                x1=${d.x.toFixed(1)}
+                y1="0"
+                x2=${d.x.toFixed(1)}
+                y2=${H}
+              ></line>`,
+            )}
             <polyline points="${pts}" fill="none" stroke="${cssVar("success", "#22c55e")}" stroke-width="1.5" />
           </svg>
+          ${dividers.map(
+            (d) =>
+              html`<span class="date-label" style="left: ${(d.pct * 100).toFixed(2)}%">${d.label}</span>`,
+          )}
         </div>
         <span id="soc-desc" class="sr-only">
           State of charge trend over the last ${this.days} days. Hover to see value at a point in time.
