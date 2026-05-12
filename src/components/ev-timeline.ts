@@ -196,9 +196,16 @@ export class EvTimeline extends LitElement {
     if (!this.entities?.priceEntity) return [];
     const raw = this.hass.states[this.entities.priceEntity]?.attributes.prices;
     if (!Array.isArray(raw)) return [];
-    return (raw as PricePoint[]).filter(
-      (p) => p && typeof p.start === "string" && typeof p.end === "string" && typeof p.price === "number",
-    );
+    const now = Date.now();
+    return (raw as PricePoint[])
+      .filter(
+        (p) =>
+          p &&
+          typeof p.start === "string" &&
+          typeof p.end === "string" &&
+          typeof p.price === "number",
+      )
+      .filter((p) => new Date(p.end).getTime() > now);
   }
 }
 

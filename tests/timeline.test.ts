@@ -6,9 +6,11 @@ import { discover } from "../src/lib/discover.js";
 
 function makePrices() {
   const out = [];
+  const baseDate = new Date();
+  baseDate.setUTCHours(0, 0, 0, 0);
   for (let h = 0; h < 24; h++) {
-    const start = new Date(Date.UTC(2026, 4, 11, h, 0));
-    const end = new Date(Date.UTC(2026, 4, 11, h + 1, 0));
+    const start = new Date(baseDate.getTime() + h * 3_600_000);
+    const end = new Date(start.getTime() + 3_600_000);
     out.push({ start: start.toISOString(), end: end.toISOString(), price: 0.5 + (h % 4) * 0.1 });
   }
   return out;
@@ -16,15 +18,20 @@ function makePrices() {
 
 describe("ev-timeline", () => {
   it("emits slot-click with isPlanned=true for a planned hour", async () => {
+    const prices = makePrices();
+    // Find the first future slot to plan (after filtering by _prices())
+    const now = Date.now();
+    const futureSlots = prices.filter((p) => new Date(p.end).getTime() > now);
+    const plannedStart = futureSlots[0]!.start;
     const hass = stubHass({
       states: {
         "sensor.daily_planned_hours": {
           attributes: {
-            hours: [new Date(Date.UTC(2026, 4, 11, 2, 0)).toISOString()],
+            hours: [plannedStart],
             hour_prices: [0.6],
           },
         },
-        "sensor.test_prices": { attributes: { prices: makePrices() } },
+        "sensor.test_prices": { attributes: { prices } },
       },
     });
     const ents = discover(hass, "test_dev");
@@ -37,13 +44,13 @@ describe("ev-timeline", () => {
     const handler = vi.fn();
     el.addEventListener("slot-click", handler as EventListener);
 
-    const rect = el.shadowRoot!.querySelector<SVGElement>("[data-slot-hour='2']");
+    const rect = el.shadowRoot!.querySelector<SVGElement>("[data-slot-hour='0']");
     expect(rect).toBeTruthy();
     rect!.dispatchEvent(new MouseEvent("click", { bubbles: true, composed: true }));
 
     expect(handler).toHaveBeenCalledOnce();
     const detail = (handler.mock.calls[0]![0] as CustomEvent).detail;
     expect(detail.isPlanned).toBe(true);
-    expect(detail.start).toMatch(/T02:00/);
+    expect(detail.start).toBe(plannedStart);
   });
 });
