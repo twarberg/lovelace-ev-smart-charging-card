@@ -29,7 +29,7 @@ export class EvStatus extends LitElement {
   @state() private _replanning = false;
 
   static override styles = css`
-    :host { display: block; }
+    :host { display: block; min-width: 0; }
     .tile {
       background: ${unsafeCSS(cssVar("cardBg", "#fff"))};
       border-radius: 12px;

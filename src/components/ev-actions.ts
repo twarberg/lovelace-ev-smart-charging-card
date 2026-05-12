@@ -13,7 +13,7 @@ export class EvActions extends LitElement {
   @state() private _deadlineOpen = false;
 
   static override styles = css`
-    :host { display: block; }
+    :host { display: block; min-width: 0; }
     .tile {
       background: ${unsafeCSS(cssVar("cardBg", "#fff"))};
       border-radius: 12px;
