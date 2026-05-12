@@ -24,7 +24,7 @@ const H = 80;
 export class EvTimeline extends LitElement {
   @property({ attribute: false }) hass!: HomeAssistant;
   @property({ attribute: false }) entities!: DeviceEntities;
-  @property({ type: Number }) hours = 24;
+  @property({ type: Number }) hours = 36;
 
   static override styles = css`
     :host { display: block; }

@@ -58,9 +58,9 @@ export class EvSmartChargingCardEditor extends LitElement {
       </label>
       <label>Timeline hours (12–48)
         <input type="number" name="timeline_hours" min="12" max="48"
-          .value=${String(this._config.timeline_hours ?? 24)}
+          .value=${String(this._config.timeline_hours ?? 36)}
           @input=${this._setNumber("timeline_hours")} />
-        <span class="hint">How many hours of price + plan data the timeline shows. Strømligning publishes 48 hours; defaults to 24 for a compact chart.</span>
+        <span class="hint">How many hours of price + plan data the timeline shows. Strømligning publishes 48 hours; defaults to 36 for a compact chart.</span>
       </label>
       <label>Helper entity (optional)
         <input type="text" name="helper_entity" .value=${this._config.helper_entity ?? ""}
