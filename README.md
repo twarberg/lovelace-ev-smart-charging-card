@@ -6,17 +6,25 @@ A Lovelace custom card for the [Smart EV Charging](https://github.com/twarberg/e
 
 ## Features
 
-- Status pill, master toggle, SoC bar
-- 24-hour price-and-plan timeline (click slots to skip / force-charge)
-- Charge-window table with per-hour price and estimated total cost
+- Status pill, master toggle, SoC bar with target marker
+- 36-hour price-and-plan timeline (configurable; click slots to skip / force-charge)
+- Charge-window table with per-hour price, per-slot kWh (last hour partial), and estimated total cost
 - 30-day cost history with per-day session drawer
 - 7-day SoC trend
-- Action buttons (Replan, Force, Skip-until, Set deadline)
+- Action buttons (Replan, Force, Skip-until, Set deadline) with:
+  - **Charge now** disabled when the car is unplugged
+  - **Clear** override shows a spinner + "Clearing…" while the call is in flight
+  - One-off departure picker writes either a helper `input_datetime` or the integration's `set_one_off_departure` service
+- Charge-window tile shows "Charging paused — SoC ≥ X%" when the integration's minimum-SoC gate suppresses charging
 - Visual GUI editor — picks the integration's device from a dropdown
 - Fully theme-aware (light / dark / community themes)
-- en + da translations (string table in place; v0.1 ships English UI)
+- en + da translations (string table in place; UI ships English by default)
 
-Requires `smart_ev_charging` integration version 0.2.0+.
+Requires the [`smart_ev_charging`](https://github.com/twarberg/ev-smart-charging) integration:
+
+- **0.2.0+** — minimum (basic plan + cost display).
+- **0.3.1+ recommended** — adds SoC gate awareness and exposes `min_soc_threshold` / `min_soc_gate_active` on `plan_status`.
+- **0.3.3+** — accurate partial-hour kWh in the Charge window table.
 
 ## Install
 
@@ -45,6 +53,10 @@ device_id: 7f3a9d2c...
 name: Daily EV
 history_days: 30
 soc_days: 7
+timeline_hours: 36       # how many hours to render on the price timeline
+helper_entity: input_datetime.ev_one_off_departure  # optional; if set,
+                          # the deadline picker writes here instead of
+                          # calling set_one_off_departure directly.
 ```
 
 Find your `device_id` at Settings → Devices & Services → Smart EV Charging → click the device. The URL ends in `…&device=<id>`.
