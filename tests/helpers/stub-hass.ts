@@ -64,6 +64,8 @@ export function stubHass(opts: StubOpts = {}): HomeAssistant {
         charger_kw: 11.0,
         soc_entity: "sensor.test_soc",
         target_soc_entity: "number.test_target",
+        min_soc_threshold: 100,
+        min_soc_gate_active: false,
       },
     };
   }

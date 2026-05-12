@@ -30,7 +30,14 @@ export class EvWindow extends LitElement {
     const language = this.hass.locale.language;
 
     if (hours.length === 0) {
-      return html`<div class="tile"><h3>Charge window</h3><div class="empty">No charging planned</div></div>`;
+      const planAttrs = this.hass.states[this.entities.planStatus]?.attributes ?? {};
+      const gateActive = planAttrs.min_soc_gate_active === true;
+      const threshold = this.entities.minSocThreshold
+        ?? (typeof planAttrs.min_soc_threshold === "number" ? planAttrs.min_soc_threshold : undefined);
+      const msg = gateActive && threshold !== undefined
+        ? `Charging paused — SoC ≥ ${threshold}%`
+        : "No charging planned";
+      return html`<div class="tile"><h3>Charge window</h3><div class="empty">${msg}</div></div>`;
     }
     let cumulative = 0;
     return html`
