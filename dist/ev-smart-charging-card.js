@@ -5,10 +5,10 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
             <ha-icon class="title-icon" icon="mdi:car-electric"></ha-icon>
             <span class="name">${l}</span>
           </div>
-          <span class="pill" style="background:${n.bg}; color:${n.fg};">
-            <span class="pill-dot"></span>${s}
-          </span>
-          <div class="toggle-wrap">
+          <div class="controls">
+            <span class="pill" style="background:${n.bg}; color:${n.fg};">
+              <span class="pill-dot"></span>${s}
+            </span>
             <ha-switch
               .checked=${"on"===e?.state}
               @change=${this._toggle}
@@ -49,6 +49,7 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
       display: flex;
       flex-direction: column;
       gap: 10px;
+      overflow: hidden;
     }
     .header {
       display: flex;
@@ -81,12 +82,11 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
       text-transform: capitalize;
     }
     .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-    .toggle-wrap {
+    .controls {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 0.85em;
-      color: ${o(wt("secondaryText","#475569"))};
+      gap: 10px;
+      margin-left: auto;
     }
     .meta {
       display: flex;
@@ -116,13 +116,14 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
     .soc-track {
       height: 8px;
       background: ${o(wt("divider","#e5e7eb"))};
-      border-radius: 999px;
+      border-radius: 0;
       overflow: visible;
       position: relative;
+      margin: 4px -14px 0;
     }
     .soc-fill {
       height: 100%;
-      border-radius: 999px;
+      border-radius: 0;
       background: linear-gradient(90deg, ${o(wt("primary","#3b82f6"))}, ${o(wt("success","#22c55e"))});
       transition: width .35s ease;
     }
