@@ -18,6 +18,7 @@ export class EvActions extends LitElement {
       background: ${unsafeCSS(cssVar("cardBg", "#fff"))};
       border-radius: 12px;
       padding: 12px;
+      overflow: hidden;
       display: flex;
       gap: 8px;
       flex-wrap: wrap;

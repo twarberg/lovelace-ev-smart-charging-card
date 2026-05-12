@@ -62,7 +62,7 @@ export class EvSmartChargingCard extends LitElement {
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
       gap: 10px;
       padding: 6px;
     }
@@ -71,9 +71,6 @@ export class EvSmartChargingCard extends LitElement {
     .error { padding: 14px; color: ${unsafeCSS(cssVar("error", "#ef4444"))}; }
     ::slotted(*), ev-status, ev-timeline, ev-window, ev-history, ev-soc-trend, ev-actions {
       filter: drop-shadow(0 1px 2px rgba(15,23,42,0.06));
-    }
-    @media (max-width: 600px) {
-      .span2 { grid-column: span 1; }
     }
   `;
 
