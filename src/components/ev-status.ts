@@ -3,14 +3,22 @@ import { customElement, property } from "lit/decorators.js";
 import { cssVar } from "../lib/theme.js";
 import type { DeviceEntities, HomeAssistant } from "../types.js";
 
-const STATUS_COLORS: Record<string, string> = {
-  ok: cssVar("success", "#22c55e"),
-  partial: cssVar("warning", "#f59e0b"),
-  extended: cssVar("warning", "#f59e0b"),
-  no_data: cssVar("secondaryText", "#94a3b8"),
-  unplugged: cssVar("secondaryText", "#94a3b8"),
-  disabled: cssVar("secondaryText", "#94a3b8"),
-};
+interface StatusStyle {
+  bg: string;
+  fg: string;
+}
+
+function statusStyleFor(status: string): StatusStyle {
+  switch (status) {
+    case "ok":
+      return { bg: "rgba(34,197,94,0.15)", fg: cssVar("success", "#16a34a") };
+    case "partial":
+    case "extended":
+      return { bg: "rgba(245,158,11,0.15)", fg: cssVar("warning", "#d97706") };
+    default:
+      return { bg: "rgba(148,163,184,0.18)", fg: cssVar("secondaryText", "#475569") };
+  }
+}
 
 @customElement("ev-status")
 export class EvStatus extends LitElement {
@@ -19,15 +27,98 @@ export class EvStatus extends LitElement {
 
   static override styles = css`
     :host { display: block; }
-    .tile { background: ${unsafeCSS(cssVar("cardBg", "#fff"))}; border-radius: 12px; padding: 12px; }
-    .header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-    .name { font-weight: 600; font-size: 1.05em; }
-    .pill { padding: 2px 10px; border-radius: 999px; color: white; font-size: 0.85em; }
-    .row { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; font-size: 0.9em; color: ${unsafeCSS(cssVar("secondaryText", "#475569"))}; }
-    .soc-track { height: 8px; background: ${unsafeCSS(cssVar("divider", "#e5e7eb"))}; border-radius: 999px; overflow: hidden; margin-top: 6px; position: relative; }
-    .soc-fill { height: 100%; background: ${unsafeCSS(cssVar("primary", "#3b82f6"))}; transition: width .3s; }
-    .soc-target { position: absolute; top: -2px; width: 2px; height: 12px; background: ${unsafeCSS(cssVar("primaryText", "#0f172a"))}; }
-    .toggle-btn { background: none; border: 1px solid ${unsafeCSS(cssVar("divider", "#e5e7eb"))}; padding: 4px 10px; border-radius: 8px; cursor: pointer; }
+    .tile {
+      background: ${unsafeCSS(cssVar("cardBg", "#fff"))};
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+    .title-icon { color: ${unsafeCSS(cssVar("primary", "#3b82f6"))}; --mdc-icon-size: 22px; }
+    .name {
+      font-weight: 600;
+      font-size: 1.05em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.82em;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+    .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85em;
+      color: ${unsafeCSS(cssVar("secondaryText", "#475569"))};
+    }
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9em;
+      color: ${unsafeCSS(cssVar("secondaryText", "#475569"))};
+    }
+    .badge {
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(59,130,246,0.12);
+      color: ${unsafeCSS(cssVar("primary", "#3b82f6"))};
+      font-size: 0.78em;
+    }
+    .soc {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .soc-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82em;
+      color: ${unsafeCSS(cssVar("secondaryText", "#475569"))};
+    }
+    .soc-track {
+      height: 8px;
+      background: ${unsafeCSS(cssVar("divider", "#e5e7eb"))};
+      border-radius: 999px;
+      overflow: visible;
+      position: relative;
+    }
+    .soc-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, ${unsafeCSS(cssVar("primary", "#3b82f6"))}, ${unsafeCSS(cssVar("success", "#22c55e"))});
+      transition: width .35s ease;
+    }
+    .soc-target {
+      position: absolute;
+      top: -3px;
+      width: 2px;
+      height: 14px;
+      background: ${unsafeCSS(cssVar("primaryText", "#0f172a"))};
+      border-radius: 1px;
+    }
   `;
 
   override render() {
@@ -35,35 +126,60 @@ export class EvStatus extends LitElement {
     const smart = this.hass.states[this.entities.smartCharging];
     const departure = this.hass.states[this.entities.effectiveDeparture];
     const status = planStatus?.state ?? "no_data";
-    const color = STATUS_COLORS[status] ?? STATUS_COLORS["no_data"] ?? "#94a3b8";
-    const oneOff = (departure?.attributes["source"] ?? "default") === "one_off";
+    const style = statusStyleFor(status);
+    const oneOff = (departure?.attributes.source ?? "default") === "one_off";
 
     const soc = this.entities.socEntity ? Number(this.hass.states[this.entities.socEntity]?.state) : NaN;
     const target = this.entities.targetSocEntity ? Number(this.hass.states[this.entities.targetSocEntity]?.state) : NaN;
     const hasSoC = Number.isFinite(soc);
 
-    const titleFromId = this.entities.planStatus.split(".")[1]?.replace(/_/g, " ").replace(/plan status$/, "").trim() ?? "EV";
+    const titleFromId = this.entities.planStatus.split(".")[1]?.replace(/_/g, " ").replace(/plan status$/, "").trim() || "EV";
 
     return html`
       <div class="tile">
         <div class="header">
-          <span class="name">${titleFromId}</span>
-          <span class="pill" style="background:${color}">${status}</span>
-          <button class="toggle-btn" @click=${this._toggle}>
-            ${smart?.state === "on" ? "Smart: ON" : "Smart: OFF"}
-          </button>
+          <div class="title-wrap">
+            <ha-icon class="title-icon" icon="mdi:car-electric"></ha-icon>
+            <span class="name">${titleFromId}</span>
+          </div>
+          <span class="pill" style="background:${style.bg}; color:${style.fg};">
+            <span class="pill-dot"></span>${status}
+          </span>
+          <div class="toggle-wrap">
+            <ha-switch
+              .checked=${smart?.state === "on"}
+              @change=${this._toggle}
+            ></ha-switch>
+          </div>
         </div>
-        <div class="row">
-          <span>Deadline: ${departure?.state ?? "—"}</span>
-          ${oneOff ? html`<span title="one-off override active">★</span>` : ""}
+
+        <div class="meta">
+          <span>
+            <ha-icon icon="mdi:flag-checkered" style="--mdc-icon-size:16px;vertical-align:-3px;"></ha-icon>
+            Deadline ${departure?.state ?? "—"}
+          </span>
+          ${oneOff
+            ? html`<span class="badge">
+                <ha-icon icon="mdi:star" style="--mdc-icon-size:14px;vertical-align:-2px;"></ha-icon>
+                one-off
+              </span>`
+            : ""}
         </div>
+
         ${hasSoC
           ? html`
-              <div class="soc-track">
-                <div class="soc-fill" style="width:${Math.max(0, Math.min(100, soc))}%"></div>
-                ${Number.isFinite(target) ? html`<div class="soc-target" style="left:${target}%"></div>` : ""}
+              <div class="soc">
+                <div class="soc-row">
+                  <span>SoC ${soc.toFixed(0)}%</span>
+                  <span>${Number.isFinite(target) ? "target " + target.toFixed(0) + "%" : ""}</span>
+                </div>
+                <div class="soc-track">
+                  <div class="soc-fill" style="width:${Math.max(0, Math.min(100, soc))}%"></div>
+                  ${Number.isFinite(target)
+                    ? html`<div class="soc-target" style="left:${Math.max(0, Math.min(100, target))}%"></div>`
+                    : ""}
+                </div>
               </div>
-              <div class="row"><span>SoC ${soc.toFixed(0)}% → ${Number.isFinite(target) ? target.toFixed(0) + "%" : "—"}</span></div>
             `
           : ""}
       </div>
@@ -71,7 +187,7 @@ export class EvStatus extends LitElement {
   }
 
   private _toggle = () => {
-    this.hass.callService("switch", "toggle", undefined, { entity_id: this.entities.smartCharging });
+    void this.hass.callService("switch", "toggle", undefined, { entity_id: this.entities.smartCharging });
   };
 }
 
