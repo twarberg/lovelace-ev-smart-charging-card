@@ -51,6 +51,7 @@ export interface CardConfig {
   show?: ShowTile[];
   history_days?: number;
   soc_days?: number;
+  timeline_hours?: number;
   theme?: "auto" | "light" | "dark";
   helper_entity?: string;
   language?: "auto" | "en" | "da";

@@ -62,7 +62,7 @@ export class EvSmartChargingCard extends LitElement {
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
       gap: 10px;
       padding: 6px;
     }
@@ -97,6 +97,7 @@ export class EvSmartChargingCard extends LitElement {
           ${show.has("status") ? html`<ev-status .hass=${this.hass} .entities=${this._entities}></ev-status>` : ""}
           ${show.has("timeline") ? html`<ev-timeline class="span2"
             .hass=${this.hass} .entities=${this._entities}
+            .hours=${this._config.timeline_hours ?? 24}
             @slot-click=${this._onSlotClick}></ev-timeline>` : ""}
           ${show.has("window") ? html`<ev-window .hass=${this.hass} .entities=${this._entities}></ev-window>` : ""}
           ${show.has("history") ? html`<ev-history .hass=${this.hass} .entities=${this._entities}
