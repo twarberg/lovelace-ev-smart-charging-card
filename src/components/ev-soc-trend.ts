@@ -17,9 +17,28 @@ export class EvSocTrend extends LitElement {
 
   static override styles = css`
     :host { display: block; }
-    .tile { background: ${unsafeCSS(cssVar("cardBg", "#fff"))}; border-radius: 12px; padding: 12px; }
-    h3 { margin: 0 0 8px; font-size: 0.95em; color: ${unsafeCSS(cssVar("secondaryText", "#475569"))}; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-    svg { width: 100%; height: 60px; display: block; }
+    .tile {
+      background: ${unsafeCSS(cssVar("cardBg", "#fff"))};
+      border-radius: 12px;
+      padding: 12px;
+      overflow: hidden;
+    }
+    h3 {
+      margin: 0 0 8px;
+      font-size: 0.95em;
+      color: ${unsafeCSS(cssVar("secondaryText", "#475569"))};
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .graph-wrap {
+      margin: 0 -12px -12px;
+    }
+    svg {
+      width: 100%;
+      height: 60px;
+      display: block;
+    }
     .empty { color: ${unsafeCSS(cssVar("secondaryText", "#94a3b8"))}; font-style: italic; }
   `;
 
@@ -58,9 +77,11 @@ export class EvSocTrend extends LitElement {
     return html`
       <div class="tile">
         <h3>SoC — ${this.days}d</h3>
-        <svg viewBox="0 0 ${W} ${H}">
-          <polyline points="${pts}" fill="none" stroke="${cssVar("success", "#22c55e")}" stroke-width="1.5" />
-        </svg>
+        <div class="graph-wrap">
+          <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+            <polyline points="${pts}" fill="none" stroke="${cssVar("success", "#22c55e")}" stroke-width="1.5" />
+          </svg>
+        </div>
       </div>
     `;
   }

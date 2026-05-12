@@ -23,10 +23,11 @@ const H = 80;
 export class EvTimeline extends LitElement {
   @property({ attribute: false }) hass!: HomeAssistant;
   @property({ attribute: false }) entities!: DeviceEntities;
+  @property({ type: Number }) hours = 24;
 
   static override styles = css`
     :host { display: block; }
-    .tile { background: ${unsafeCSS(cssVar("cardBg", "#fff"))}; border-radius: 12px; padding: 12px; }
+    .tile { background: ${unsafeCSS(cssVar("cardBg", "#fff"))}; border-radius: 12px; padding: 12px; overflow: hidden; }
     h3 { margin: 0 0 8px; font-size: 0.95em; color: ${unsafeCSS(cssVar("secondaryText", "#475569"))}; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
     svg { width: 100%; height: auto; display: block; }
     .slot { cursor: pointer; }
@@ -41,7 +42,7 @@ export class EvTimeline extends LitElement {
   private _lastPlanned: Set<string> = new Set();
 
   override render() {
-    const prices = this._prices();
+    const prices = this._prices().slice(0, Math.max(1, Math.min(this.hours, 48)));
     this._lastPrices = prices;
 
     if (prices.length === 0) {
