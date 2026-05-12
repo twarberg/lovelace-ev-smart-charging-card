@@ -66,7 +66,10 @@ export class EvSmartChargingCard extends LitElement {
       gap: 10px;
       padding: 6px;
     }
-    .span2 { grid-column: span 2; }
+    .grid > * {
+      min-width: 0;
+    }
+    .span2 { grid-column: 1 / -1; }
     .full { grid-column: 1 / -1; }
     .error { padding: 14px; color: ${unsafeCSS(cssVar("error", "#ef4444"))}; }
   `;
