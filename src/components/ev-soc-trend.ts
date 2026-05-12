@@ -1,4 +1,4 @@
-import { LitElement, css, html, unsafeCSS } from "lit";
+import { LitElement, css, html, svg, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { fetchHistory } from "../lib/history.js";
 import type { StateSample } from "../lib/history.js";
@@ -135,7 +135,7 @@ export class EvSocTrend extends LitElement {
             @mouseleave=${this._onLeave}
           >
             ${dividers.map(
-              (d) => html`<line
+              (d) => svg`<line
                 class="date-line"
                 x1=${d.x.toFixed(1)}
                 y1="0"
