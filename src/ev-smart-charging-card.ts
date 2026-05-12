@@ -62,7 +62,7 @@ export class EvSmartChargingCard extends LitElement {
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr));
       gap: 10px;
       padding: 6px;
     }
