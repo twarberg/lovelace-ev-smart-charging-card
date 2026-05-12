@@ -54,6 +54,41 @@ describe("ev-actions clear-override loading state", () => {
     expect(settledBtn.getAttribute("aria-busy")).toBe("false");
   });
 
+  it("dispatches override-cleared event after successful call", async () => {
+    const hass = withOneOffActive(stubHass());
+    let resolveCall!: () => void;
+    hass.callService = () => new Promise((res) => { resolveCall = () => res(); });
+
+    const ents = discover(hass, "test_dev");
+    const el = document.createElement("ev-actions") as EvActions;
+    el.hass = hass;
+    el.entities = ents;
+    document.body.appendChild(el);
+    await el.updateComplete;
+
+    let fired = false;
+    el.addEventListener("override-cleared", () => { fired = true; });
+
+    el.shadowRoot!.querySelector<HTMLButtonElement>("button.clear")!.click();
+    await el.updateComplete;
+    expect(fired).toBe(false);
+    resolveCall();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fired).toBe(true);
+  });
+
+  it("hides the Clear button when optimisticOverrideCleared is true", async () => {
+    const hass = withOneOffActive(stubHass());
+    const ents = discover(hass, "test_dev");
+    const el = document.createElement("ev-actions") as EvActions;
+    el.hass = hass;
+    el.entities = ents;
+    el.optimisticOverrideCleared = true;
+    document.body.appendChild(el);
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector("button.clear")).toBeNull();
+  });
+
   it("ignores re-clicks while a call is in flight", async () => {
     const hass = withOneOffActive(stubHass());
 

@@ -20,7 +20,9 @@ export class EvSmartChargingCard extends LitElement {
   @state() private _config?: CardConfig;
   @state() private _entities?: DeviceEntities;
   @state() private _error?: string;
+  @state() private _optimisticOverrideCleared = false;
   private _unsubscribe?: () => Promise<void>;
+  private _optimisticTimer?: ReturnType<typeof setTimeout>;
 
   static getStubConfig(): Partial<CardConfig> {
     return { device_id: "" };
@@ -53,7 +55,34 @@ export class EvSmartChargingCard extends LitElement {
     super.disconnectedCallback();
     void this._unsubscribe?.();
     this._unsubscribe = undefined;
+    if (this._optimisticTimer) {
+      clearTimeout(this._optimisticTimer);
+      this._optimisticTimer = undefined;
+    }
   }
+
+  override updated() {
+    if (this._optimisticOverrideCleared && this._entities) {
+      const dep = this.hass?.states[this._entities.effectiveDeparture];
+      const source = (dep?.attributes.source ?? "default") as string;
+      if (source !== "one_off") {
+        this._optimisticOverrideCleared = false;
+        if (this._optimisticTimer) {
+          clearTimeout(this._optimisticTimer);
+          this._optimisticTimer = undefined;
+        }
+      }
+    }
+  }
+
+  private _onOverrideCleared = () => {
+    this._optimisticOverrideCleared = true;
+    if (this._optimisticTimer) clearTimeout(this._optimisticTimer);
+    this._optimisticTimer = setTimeout(() => {
+      this._optimisticOverrideCleared = false;
+      this._optimisticTimer = undefined;
+    }, 5000);
+  };
 
   static override styles = css`
     :host { display: block; }
@@ -95,6 +124,7 @@ export class EvSmartChargingCard extends LitElement {
   .hass=${this.hass}
   .entities=${this._entities}
   .cardTitle=${this._config?.name ?? ""}
+  .optimisticOverrideCleared=${this._optimisticOverrideCleared}
 ></ev-status>` : ""}
           ${show.has("timeline") ? html`<ev-timeline class="span2"
             .hass=${this.hass} .entities=${this._entities}
@@ -107,7 +137,9 @@ export class EvSmartChargingCard extends LitElement {
             .days=${this._config.soc_days ?? 7}></ev-soc-trend>` : ""}
           ${show.has("actions") ? html`<ev-actions class="full"
             .hass=${this.hass} .entities=${this._entities}
-            .helperEntity=${this._config.helper_entity ?? ""}></ev-actions>` : ""}
+            .helperEntity=${this._config.helper_entity ?? ""}
+            .optimisticOverrideCleared=${this._optimisticOverrideCleared}
+            @override-cleared=${this._onOverrideCleared}></ev-actions>` : ""}
         </div>
       </ha-card>
     `;

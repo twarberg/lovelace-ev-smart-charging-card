@@ -25,6 +25,7 @@ export class EvStatus extends LitElement {
   @property({ attribute: false }) hass!: HomeAssistant;
   @property({ attribute: false }) entities!: DeviceEntities;
   @property({ type: String }) cardTitle = "";
+  @property({ type: Boolean }) optimisticOverrideCleared = false;
 
   @state() private _replanning = false;
 
@@ -151,7 +152,7 @@ export class EvStatus extends LitElement {
     const departure = this.hass.states[this.entities.effectiveDeparture];
     const status = planStatus?.state ?? "no_data";
     const style = statusStyleFor(status);
-    const oneOff = (departure?.attributes.source ?? "default") === "one_off";
+    const oneOff = (departure?.attributes.source ?? "default") === "one_off" && !this.optimisticOverrideCleared;
 
     const soc = this.entities.socEntity ? Number(this.hass.states[this.entities.socEntity]?.state) : NaN;
     const target = this.entities.targetSocEntity ? Number(this.hass.states[this.entities.targetSocEntity]?.state) : NaN;

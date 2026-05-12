@@ -9,6 +9,7 @@ export class EvActions extends LitElement {
   @property({ attribute: false }) hass!: HomeAssistant;
   @property({ attribute: false }) entities!: DeviceEntities;
   @property({ type: String }) helperEntity = "";
+  @property({ type: Boolean }) optimisticOverrideCleared = false;
 
   @state() private _deadlineOpen = false;
   @state() private _clearing = false;
@@ -60,8 +61,9 @@ export class EvActions extends LitElement {
 
   override render() {
     const initial = this.hass.states[this.entities.effectiveDeparture]?.state ?? "06:00";
-    const overrideActive =
+    const sourceIsOneOff =
       (this.hass.states[this.entities.effectiveDeparture]?.attributes.source ?? "default") === "one_off";
+    const overrideActive = sourceIsOneOff && !this.optimisticOverrideCleared;
 
     return html`
       <div class="tile">
@@ -112,6 +114,7 @@ export class EvActions extends LitElement {
     this._clearing = true;
     try {
       await this.hass.callService("smart_ev_charging", "set_one_off_departure", {}, this._target());
+      this.dispatchEvent(new CustomEvent("override-cleared", { bubbles: true, composed: true }));
     } finally {
       setTimeout(() => { this._clearing = false; }, 400);
     }
