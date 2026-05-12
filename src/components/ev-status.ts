@@ -105,14 +105,14 @@ export class EvStatus extends LitElement {
     .soc-track {
       height: 8px;
       background: ${unsafeCSS(cssVar("divider", "#e5e7eb"))};
-      border-radius: 0;
+      border-radius: 999px;
       overflow: visible;
       position: relative;
-      margin: 4px -14px 0;
+      margin-top: 4px;
     }
     .soc-fill {
       height: 100%;
-      border-radius: 0;
+      border-radius: 999px;
       background: linear-gradient(90deg, ${unsafeCSS(cssVar("primary", "#3b82f6"))}, ${unsafeCSS(cssVar("success", "#22c55e"))});
       transition: width .35s ease;
     }

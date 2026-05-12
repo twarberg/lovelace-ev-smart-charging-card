@@ -126,14 +126,14 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
     .soc-track {
       height: 8px;
       background: ${o(xt("divider","#e5e7eb"))};
-      border-radius: 0;
+      border-radius: 999px;
       overflow: visible;
       position: relative;
-      margin: 4px -14px 0;
+      margin-top: 4px;
     }
     .soc-fill {
       height: 100%;
-      border-radius: 0;
+      border-radius: 999px;
       background: linear-gradient(90deg, ${o(xt("primary","#3b82f6"))}, ${o(xt("success","#22c55e"))});
       transition: width .35s ease;
     }
@@ -271,7 +271,7 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
       text-transform: uppercase;
     }
     .graph-wrap {
-      margin: 0 -12px -12px;
+      margin: 0;
     }
     svg {
       width: 100%;
