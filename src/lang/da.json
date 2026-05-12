@@ -1,0 +1,30 @@
+{
+  "tiles": {
+    "status": "Status",
+    "timeline": "Pris & plan",
+    "window": "Ladevindue",
+    "history": "Historik",
+    "soc": "Batteriniveau",
+    "actions": "Handlinger"
+  },
+  "actions": {
+    "replan": "Genplanlæg",
+    "force": "Tving opladning",
+    "skip": "Spring 1t over",
+    "set_deadline": "Sæt afgangstid",
+    "clear_override": "Ryd override"
+  },
+  "labels": {
+    "smart_on": "Smart: TIL",
+    "smart_off": "Smart: FRA",
+    "deadline": "Frist",
+    "one_off_active": "engangs-override aktiv",
+    "no_charging_planned": "Ingen opladning planlagt",
+    "no_price_data": "Ingen prisdata endnu",
+    "no_soc_entity": "Ingen SoC-entitet konfigureret",
+    "loading": "Indlæser…",
+    "estimated_total": "Estimeret total",
+    "total": "Total",
+    "sessions": "sessioner"
+  }
+}
