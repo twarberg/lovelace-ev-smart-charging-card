@@ -119,19 +119,27 @@ export class EvSocTrend extends LitElement {
   }
 
   private _onMove = (samples: StateSample[]) => (e: MouseEvent) => {
-    const svgEl = e.currentTarget as SVGSVGElement;
-    const rect = svgEl.getBoundingClientRect();
-    const ratioX = (e.clientX - rect.left) / rect.width;
-    const idx = Math.min(samples.length - 1, Math.max(0, Math.floor(ratioX * samples.length)));
-    const sample = samples[idx];
-    if (!sample) return;
-    const text = `${new Date(sample.t).toLocaleString()} · ${Number(sample.state).toFixed(0)}%`;
-    this._tip = {
-      visible: true,
-      x: e.clientX,
-      y: e.clientY,
-      text,
-    };
+    const svg = e.currentTarget as SVGSVGElement;
+    const rect = svg.getBoundingClientRect();
+    if (rect.width === 0) return;
+    const ratioX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+
+    const tStart = new Date(samples[0]!.t).getTime();
+    const tEnd = new Date(samples[samples.length - 1]!.t).getTime();
+    const targetTime = tStart + ratioX * (tEnd - tStart);
+
+    // Linear scan — sample count is small (≤ few hundred for 7-30d).
+    let nearest = samples[0]!;
+    let minDelta = Infinity;
+    for (const s of samples) {
+      const delta = Math.abs(new Date(s.t).getTime() - targetTime);
+      if (delta < minDelta) {
+        minDelta = delta;
+        nearest = s;
+      }
+    }
+    const text = `${new Date(nearest.t).toLocaleString()} · ${Number(nearest.state).toFixed(0)}%`;
+    this._tip = { visible: true, x: e.clientX, y: e.clientY, text };
   };
 
   private _onLeave = () => { this._tip = { ...this._tip, visible: false }; };
