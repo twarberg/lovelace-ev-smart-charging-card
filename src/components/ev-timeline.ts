@@ -1,7 +1,8 @@
 import { LitElement, css, html, unsafeCSS } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { cssVar } from "../lib/theme.js";
 import type { DeviceEntities, HomeAssistant } from "../types.js";
+import "./hover-tooltip.js";
 
 interface PricePoint {
   start: string;
@@ -27,7 +28,7 @@ export class EvTimeline extends LitElement {
 
   static override styles = css`
     :host { display: block; }
-    .tile { background: ${unsafeCSS(cssVar("cardBg", "#fff"))}; border-radius: 12px; padding: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
+    .tile { background: ${unsafeCSS(cssVar("cardBg", "#fff"))}; border-radius: 12px; padding: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); position: relative; }
     h3 { margin: 0 0 8px; font-size: 0.95em; color: ${unsafeCSS(cssVar("secondaryText", "#475569"))}; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
     svg { width: 100%; height: auto; display: block; }
     .slot { cursor: pointer; }
@@ -35,7 +36,20 @@ export class EvTimeline extends LitElement {
     .planned-rect { fill: ${unsafeCSS(cssVar("success", "#22c55e"))}; opacity: 0.35; pointer-events: none; }
     .now-line { stroke: ${unsafeCSS(cssVar("primaryText", "#0f172a"))}; stroke-width: 1; stroke-dasharray: 2 2; }
     .empty { color: ${unsafeCSS(cssVar("secondaryText", "#94a3b8"))}; font-style: italic; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
   `;
+
+  @state() private _tip = { visible: false, x: 0, y: 0, text: "" };
 
   /** Computed once per render, used in updated() to populate rects */
   private _lastPrices: PricePoint[] = [];
@@ -75,13 +89,30 @@ export class EvTimeline extends LitElement {
 
     return html`
       <div class="tile">
-        <h3>Price &amp; plan — next ${prices.length}h</h3>
-        <svg id="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="24h price curve with planned hours">
+        <h3 id="timeline-title">Price &amp; plan — next ${prices.length}h</h3>
+        <svg
+          id="chart"
+          viewBox="0 0 ${W} ${H}"
+          role="img"
+          aria-labelledby="timeline-title"
+          aria-describedby="timeline-desc"
+          @mousemove=${this._onMove(prices)}
+          @mouseleave=${this._onLeave}
+        >
           <polyline points="${linePts}" fill="none" stroke="${cssVar("primary", "#3b82f6")}" stroke-width="1.5" />
           ${nowX >= 0
             ? html`<line class="now-line" x1="${nowX}" y1="0" x2="${nowX}" y2="${H}"></line>`
             : ""}
         </svg>
+        <span id="timeline-desc" class="sr-only">
+          24-hour electricity price curve. Hover or focus a bar to see the slot price.
+        </span>
+        <ev-hover-tooltip
+          .visible=${this._tip.visible}
+          .x=${this._tip.x}
+          .y=${this._tip.y}
+          .text=${this._tip.text}
+        ></ev-hover-tooltip>
       </div>
     `;
   }
@@ -137,6 +168,25 @@ export class EvTimeline extends LitElement {
       svgEl.insertBefore(g, svgEl.firstChild);
     }
   }
+
+  private _onMove = (prices: PricePoint[]) => (e: MouseEvent) => {
+    const svg = e.currentTarget as SVGSVGElement;
+    const rect = svg.getBoundingClientRect();
+    const ratioX = (e.clientX - rect.left) / rect.width;
+    const idx = Math.min(prices.length - 1, Math.max(0, Math.floor(ratioX * prices.length)));
+    const p = prices[idx];
+    if (!p) return;
+    const text = `${new Date(p.start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · ${p.price.toFixed(2)}`;
+    const tileRect = svg.closest(".tile")!.getBoundingClientRect();
+    this._tip = {
+      visible: true,
+      x: e.clientX - tileRect.left,
+      y: e.clientY - tileRect.top,
+      text,
+    };
+  };
+
+  private _onLeave = () => { this._tip = { ...this._tip, visible: false }; };
 
   private _emitSlot = (p: PricePoint, isPlanned: boolean) => {
     const detail: SlotClickDetail = { start: p.start, end: p.end, isPlanned, price: p.price };

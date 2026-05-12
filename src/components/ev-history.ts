@@ -1,5 +1,6 @@
 import { LitElement, css, html, svg, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import "./hover-tooltip.js";
 import { attachCost, detectSessions, fetchHistory, rollupByDay } from "../lib/history.js";
 import type { DayBucket, PricePoint } from "../lib/history.js";
 import { formatCurrency } from "../lib/format.js";
@@ -16,11 +17,12 @@ export class EvHistory extends LitElement {
   @state() private _loading = false;
   @state() private _expanded: string | null = null;
   @state() private _error: string | null = null;
+  @state() private _tip = { visible: false, x: 0, y: 0, text: "" };
   private _lastFetchKey = "";
 
   static override styles = css`
     :host { display: block; }
-    .tile { background: ${unsafeCSS(cssVar("cardBg", "#fff"))}; border-radius: 12px; padding: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
+    .tile { background: ${unsafeCSS(cssVar("cardBg", "#fff"))}; border-radius: 12px; padding: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); position: relative; }
     h3 { margin: 0 0 8px; font-size: 0.95em; color: ${unsafeCSS(cssVar("secondaryText", "#475569"))}; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
     .header { display: flex; justify-content: space-between; font-size: 0.85em; color: ${unsafeCSS(cssVar("secondaryText", "#475569"))}; margin-bottom: 6px; gap: 8px; flex-wrap: nowrap; }
     .header > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -31,6 +33,17 @@ export class EvHistory extends LitElement {
     .drawer ul { list-style: none; padding: 0; margin: 0; }
     .drawer li { padding: 2px 0; border-bottom: 1px solid ${unsafeCSS(cssVar("divider", "#eee"))}; }
     .empty { color: ${unsafeCSS(cssVar("secondaryText", "#94a3b8"))}; font-style: italic; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
   `;
 
   override updated() {
@@ -56,7 +69,14 @@ export class EvHistory extends LitElement {
         : buckets.length === 0
           ? html`<div class="empty">No charging sessions in the last ${this.days} days</div>`
           : html`
-            <svg viewBox="0 0 ${buckets.length * 8} 80">
+            <svg
+              viewBox="0 0 ${buckets.length * 8} 80"
+              role="img"
+              aria-labelledby="history-title"
+              aria-describedby="history-desc"
+              @mousemove=${this._onMove(buckets, unit, language)}
+              @mouseleave=${this._onLeave}
+            >
               ${buckets.map((b, i) => {
                 const h = maxCost > 0 ? (b.cost / maxCost) * 76 : 0;
                 return svg`<rect class="bar" x="${i * 8}" y="${80 - h}" width="7" height="${h}"
@@ -65,6 +85,15 @@ export class EvHistory extends LitElement {
                   <title>${b.date}: ${b.cost.toFixed(2)} ${unit ?? ""}</title></rect>`;
               })}
             </svg>
+            <span id="history-desc" class="sr-only">
+              Daily charging cost bar chart. Click a bar to expand session details.
+            </span>
+            <ev-hover-tooltip
+              .visible=${this._tip.visible}
+              .x=${this._tip.x}
+              .y=${this._tip.y}
+              .text=${this._tip.text}
+            ></ev-hover-tooltip>
             ${this._expanded
               ? html`<div class="drawer">
                   <strong>${this._expanded}</strong>
@@ -81,7 +110,7 @@ export class EvHistory extends LitElement {
 
     return html`
       <div class="tile">
-        <h3>History — ${this.days}d</h3>
+        <h3 id="history-title">History — ${this.days}d</h3>
         <div class="header">
           <span>Total ${formatCurrency(total, unit, language)}</span>
           <span>${sessionCount} sessions</span>
@@ -90,6 +119,24 @@ export class EvHistory extends LitElement {
       </div>
     `;
   }
+
+  private _onMove = (buckets: DayBucket[], unit: string | null, language: string) => (e: MouseEvent) => {
+    const svgEl = e.currentTarget as SVGSVGElement;
+    const svgRect = svgEl.getBoundingClientRect();
+    const idx = Math.min(buckets.length - 1, Math.max(0, Math.floor((e.clientX - svgRect.left) / 8)));
+    const b = buckets[idx];
+    if (!b) return;
+    const text = `${b.date} · Total ${formatCurrency(b.cost, unit, language)} · ${b.sessions.length} sessions`;
+    const tileRect = svgEl.closest(".tile")!.getBoundingClientRect();
+    this._tip = {
+      visible: true,
+      x: e.clientX - tileRect.left,
+      y: e.clientY - tileRect.top,
+      text,
+    };
+  };
+
+  private _onLeave = () => { this._tip = { ...this._tip, visible: false }; };
 
   private async _fetch() {
     this._error = null;
