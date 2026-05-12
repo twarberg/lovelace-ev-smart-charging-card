@@ -14,22 +14,66 @@ export class EvActions extends LitElement {
 
   static override styles = css`
     :host { display: block; }
-    .tile { background: ${unsafeCSS(cssVar("cardBg", "#fff"))}; border-radius: 12px; padding: 12px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-around; }
-    button { background: none; border: 1px solid ${unsafeCSS(cssVar("divider", "#e5e7eb"))}; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.9em; }
-    button:hover { background: ${unsafeCSS(cssVar("primary", "#3b82f6"))}; color: white; border-color: transparent; }
+    .tile {
+      background: ${unsafeCSS(cssVar("cardBg", "#fff"))};
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button {
+      flex: 1 1 auto;
+      min-width: 110px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-size: 0.88em;
+      font-weight: 500;
+      transition: filter .12s, transform .05s;
+      background: rgba(148,163,184,0.12);
+      color: ${unsafeCSS(cssVar("primaryText", "#0f172a"))};
+    }
+    button:hover { filter: brightness(0.95); }
+    button:active { transform: translateY(1px); }
+    button ha-icon { --mdc-icon-size: 18px; }
+
+    button.replan { background: rgba(59,130,246,0.15); color: ${unsafeCSS(cssVar("primary", "#3b82f6"))}; }
+    button.force  { background: rgba(245,158,11,0.18); color: ${unsafeCSS(cssVar("warning", "#d97706"))}; }
+    button.skip   { background: rgba(148,163,184,0.20); color: ${unsafeCSS(cssVar("secondaryText", "#475569"))}; }
+    button.set    { background: rgba(34,197,94,0.18); color: ${unsafeCSS(cssVar("success", "#16a34a"))}; }
+    button.clear  { background: rgba(239,68,68,0.15); color: ${unsafeCSS(cssVar("error", "#ef4444"))}; }
   `;
 
   override render() {
     const initial = this.hass.states[this.entities.effectiveDeparture]?.state ?? "06:00";
     const overrideActive =
       (this.hass.states[this.entities.effectiveDeparture]?.attributes.source ?? "default") === "one_off";
+
     return html`
       <div class="tile">
-        <button @click=${this._replan}>Replan</button>
-        <button @click=${this._force}>Force charge (2h)</button>
-        <button @click=${this._skip}>Skip 1h</button>
-        <button @click=${this._openDeadline}>Set deadline</button>
-        ${overrideActive ? html`<button @click=${this._clearOverride}>Clear override</button>` : ""}
+        <button class="replan" @click=${this._replan}>
+          <ha-icon icon="mdi:refresh"></ha-icon> Replan
+        </button>
+        <button class="force" @click=${this._force}>
+          <ha-icon icon="mdi:flash"></ha-icon> Force 2h
+        </button>
+        <button class="skip" @click=${this._skip}>
+          <ha-icon icon="mdi:fast-forward"></ha-icon> Skip 1h
+        </button>
+        <button class="set" @click=${this._openDeadline}>
+          <ha-icon icon="mdi:clock-edit-outline"></ha-icon> Set deadline
+        </button>
+        ${overrideActive
+          ? html`<button class="clear" @click=${this._clearOverride}>
+              <ha-icon icon="mdi:close-circle-outline"></ha-icon> Clear
+            </button>`
+          : ""}
       </div>
       <ev-deadline-picker
         .initialTime=${initial}
