@@ -33,7 +33,7 @@ export class EvSocTrend extends LitElement {
       text-transform: uppercase;
     }
     .graph-wrap {
-      margin: 0 -12px -12px;
+      margin: 0;
     }
     svg {
       width: 100%;
