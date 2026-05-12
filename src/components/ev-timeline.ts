@@ -177,11 +177,10 @@ export class EvTimeline extends LitElement {
     const p = prices[idx];
     if (!p) return;
     const text = `${new Date(p.start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · ${p.price.toFixed(2)}`;
-    const tileRect = svg.closest(".tile")!.getBoundingClientRect();
     this._tip = {
       visible: true,
-      x: e.clientX - tileRect.left,
-      y: e.clientY - tileRect.top,
+      x: e.clientX,
+      y: e.clientY,
       text,
     };
   };

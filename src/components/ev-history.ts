@@ -127,11 +127,10 @@ export class EvHistory extends LitElement {
     const b = buckets[idx];
     if (!b) return;
     const text = `${b.date} · Total ${formatCurrency(b.cost, unit, language)} · ${b.sessions.length} sessions`;
-    const tileRect = svgEl.closest(".tile")!.getBoundingClientRect();
     this._tip = {
       visible: true,
-      x: e.clientX - tileRect.left,
-      y: e.clientY - tileRect.top,
+      x: e.clientX,
+      y: e.clientY,
       text,
     };
   };

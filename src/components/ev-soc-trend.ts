@@ -126,11 +126,10 @@ export class EvSocTrend extends LitElement {
     const sample = samples[idx];
     if (!sample) return;
     const text = `${new Date(sample.t).toLocaleString()} · ${Number(sample.state).toFixed(0)}%`;
-    const tileRect = svgEl.closest(".tile")!.getBoundingClientRect();
     this._tip = {
       visible: true,
-      x: e.clientX - tileRect.left,
-      y: e.clientY - tileRect.top,
+      x: e.clientX,
+      y: e.clientY,
       text,
     };
   };
