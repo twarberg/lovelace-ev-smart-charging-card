@@ -24,6 +24,7 @@ function statusStyleFor(status: string): StatusStyle {
 export class EvStatus extends LitElement {
   @property({ attribute: false }) hass!: HomeAssistant;
   @property({ attribute: false }) entities!: DeviceEntities;
+  @property({ type: String }) cardTitle = "";
 
   @state() private _replanning = false;
 
@@ -156,13 +157,14 @@ export class EvStatus extends LitElement {
     const hasSoC = Number.isFinite(soc);
 
     const titleFromId = this.entities.planStatus.split(".")[1]?.replace(/_/g, " ").replace(/plan status$/, "").trim() || "EV";
+    const titleToShow = this.cardTitle?.trim() || titleFromId;
 
     return html`
       <div class="tile">
         <div class="header">
           <div class="title-wrap">
             <ha-icon class="title-icon" icon="mdi:car-electric"></ha-icon>
-            <span class="name">${titleFromId}</span>
+            <span class="name">${titleToShow}</span>
           </div>
           <div class="controls">
             <button

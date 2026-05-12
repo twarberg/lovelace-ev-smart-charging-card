@@ -94,7 +94,11 @@ export class EvSmartChargingCard extends LitElement {
     return html`
       <ha-card>
         <div class="grid">
-          ${show.has("status") ? html`<ev-status .hass=${this.hass} .entities=${this._entities}></ev-status>` : ""}
+          ${show.has("status") ? html`<ev-status
+  .hass=${this.hass}
+  .entities=${this._entities}
+  .cardTitle=${this._config?.name ?? ""}
+></ev-status>` : ""}
           ${show.has("timeline") ? html`<ev-timeline class="span2"
             .hass=${this.hass} .entities=${this._entities}
             .hours=${this._config.timeline_hours ?? 24}
