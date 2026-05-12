@@ -50,9 +50,19 @@ export class EvActions extends LitElement {
     button.charge { background: rgba(245,158,11,0.18); color: ${unsafeCSS(cssVar("warning", "#d97706"))}; }
     button.set    { background: rgba(34,197,94,0.18); color: ${unsafeCSS(cssVar("success", "#16a34a"))}; }
     button.clear  { background: rgba(239,68,68,0.15); color: ${unsafeCSS(cssVar("error", "#ef4444"))}; }
-    button:disabled { cursor: not-allowed; opacity: 0.5; }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+      background: rgba(148,163,184,0.12);
+      color: ${unsafeCSS(cssVar("secondaryText", "#94a3b8"))};
+    }
     button:disabled:hover { filter: none; }
-    button.spinning:disabled { cursor: progress; opacity: 0.7; }
+    button.spinning:disabled {
+      cursor: progress;
+      opacity: 0.7;
+      background: rgba(239,68,68,0.15);
+      color: ${unsafeCSS(cssVar("error", "#ef4444"))};
+    }
     button.spinning ha-icon { animation: spin 0.9s linear infinite; }
     @keyframes spin {
       from { transform: rotate(0deg); }
