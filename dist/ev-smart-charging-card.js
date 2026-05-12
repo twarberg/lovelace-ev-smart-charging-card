@@ -486,7 +486,10 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
       gap: 10px;
       padding: 6px;
     }
-    .span2 { grid-column: span 2; }
+    .grid > * {
+      min-width: 0;
+    }
+    .span2 { grid-column: 1 / -1; }
     .full { grid-column: 1 / -1; }
     .error { padding: 14px; color: ${o(xt("error","#ef4444"))}; }
   `,t([ft({attribute:!1})],Rt.prototype,"hass",void 0),t([mt()],Rt.prototype,"_config",void 0),t([mt()],Rt.prototype,"_entities",void 0),t([mt()],Rt.prototype,"_error",void 0),Rt=t([pt("ev-smart-charging-card")],Rt),(Ut=window).customCards||(Ut.customCards=[]),window.customCards.push({type:"ev-smart-charging-card",name:"Smart EV Charging",description:"Status, plan timeline, history and actions for the Smart EV Charging integration.",preview:!1}),console.info("%c ev-smart-charging-card%c v0.1.0 ","color:white;background:#3b82f6;font-weight:700","color:#3b82f6");const jt=["status","timeline","window","history","soc","actions"];let Bt=class extends ht{constructor(){super(...arguments),this._config={},this._onDeviceChanged=t=>{const e=t.detail.value;this._config={...this._config,device_id:e||""},this._emit()},this._setField=t=>e=>{const i=e.target.value;this._config={...this._config,[t]:i||void 0},this._emit()},this._setNumber=t=>e=>{const i=Number(e.target.value);this._config={...this._config,[t]:Number.isFinite(i)?i:void 0},this._emit()},this._toggleTile=t=>e=>{const i=e.target.checked,s=new Set(this._config.show??jt);i?s.add(t):s.delete(t),this._config={...this._config,show:[...s]},this._emit()}}setConfig(t){this._config={...t}}render(){return W`
