@@ -38,6 +38,7 @@ export class EvStatus extends LitElement {
       flex-direction: column;
       gap: 10px;
       overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
     .header {
       display: flex;

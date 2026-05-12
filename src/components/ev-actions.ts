@@ -22,6 +22,7 @@ export class EvActions extends LitElement {
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
     button {
       flex: 1 1 auto;

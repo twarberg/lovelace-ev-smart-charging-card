@@ -11,7 +11,7 @@ export class EvWindow extends LitElement {
 
   static override styles = css`
     :host { display: block; }
-    .tile { background: ${unsafeCSS(cssVar("cardBg", "#fff"))}; border-radius: 12px; padding: 12px; overflow: hidden; }
+    .tile { background: ${unsafeCSS(cssVar("cardBg", "#fff"))}; border-radius: 12px; padding: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
     h3 { margin: 0 0 8px; font-size: 0.95em; color: ${unsafeCSS(cssVar("secondaryText", "#475569"))}; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
     table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
     th, td { padding: 4px 6px; border-bottom: 1px solid ${unsafeCSS(cssVar("divider", "#eee"))}; text-align: right; }
