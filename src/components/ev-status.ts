@@ -1,5 +1,5 @@
 import { LitElement, css, html, unsafeCSS } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { cssVar } from "../lib/theme.js";
 import type { DeviceEntities, HomeAssistant } from "../types.js";
 
@@ -24,6 +24,8 @@ function statusStyleFor(status: string): StatusStyle {
 export class EvStatus extends LitElement {
   @property({ attribute: false }) hass!: HomeAssistant;
   @property({ attribute: false }) entities!: DeviceEntities;
+
+  @state() private _replanning = false;
 
   static override styles = css`
     :host { display: block; }
@@ -120,6 +122,25 @@ export class EvStatus extends LitElement {
       background: ${unsafeCSS(cssVar("primaryText", "#0f172a"))};
       border-radius: 1px;
     }
+    .replan-btn {
+      border: none;
+      background: transparent;
+      color: ${unsafeCSS(cssVar("primary", "#3b82f6"))};
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      --mdc-icon-size: 20px;
+    }
+    .replan-btn:hover { background: rgba(59,130,246,0.10); }
+    .replan-btn:focus-visible { outline: 2px solid ${unsafeCSS(cssVar("primary", "#3b82f6"))}; outline-offset: 2px; }
+    .replan-btn:disabled { cursor: progress; opacity: 0.7; }
+    .replan-btn.spinning ha-icon { animation: spin 0.9s linear infinite; }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
   `;
 
   override render() {
@@ -144,6 +165,15 @@ export class EvStatus extends LitElement {
             <span class="name">${titleFromId}</span>
           </div>
           <div class="controls">
+            <button
+              class="replan-btn ${this._replanning ? "spinning" : ""}"
+              title="Replan the charge window now."
+              aria-label="Replan"
+              @click=${this._replan}
+              ?disabled=${this._replanning}
+            >
+              <ha-icon icon="mdi:refresh"></ha-icon>
+            </button>
             <span class="pill" style="background:${style.bg}; color:${style.fg};">
               <span class="pill-dot"></span>${status}
             </span>
@@ -186,6 +216,17 @@ export class EvStatus extends LitElement {
       </div>
     `;
   }
+
+  private _replan = async () => {
+    if (this._replanning) return;
+    this._replanning = true;
+    try {
+      await this.hass.callService("smart_ev_charging", "replan", {}, { entity_id: this.entities.planStatus });
+    } finally {
+      // small minimum spin so feedback is visible even on instant returns
+      setTimeout(() => { this._replanning = false; }, 400);
+    }
+  };
 
   private _toggle = () => {
     void this.hass.callService("switch", "toggle", undefined, { entity_id: this.entities.smartCharging });
