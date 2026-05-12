@@ -11,12 +11,12 @@ interface StatusStyle {
 function statusStyleFor(status: string): StatusStyle {
   switch (status) {
     case "ok":
-      return { bg: "rgba(34,197,94,0.15)", fg: cssVar("success", "#16a34a") };
+      return { bg: "rgba(34,197,94,0.22)", fg: cssVar("success", "#16a34a") };
     case "partial":
     case "extended":
-      return { bg: "rgba(245,158,11,0.15)", fg: cssVar("warning", "#d97706") };
+      return { bg: "rgba(245,158,11,0.22)", fg: cssVar("warning", "#d97706") };
     default:
-      return { bg: "rgba(148,163,184,0.18)", fg: cssVar("secondaryText", "#475569") };
+      return { bg: "rgba(148,163,184,0.22)", fg: cssVar("secondaryText", "#475569") };
   }
 }
 
@@ -172,16 +172,18 @@ export class EvStatus extends LitElement {
               class="replan-btn ${this._replanning ? "spinning" : ""}"
               title="Replan the charge window now."
               aria-label="Replan"
+              aria-busy=${this._replanning ? "true" : "false"}
               @click=${this._replan}
               ?disabled=${this._replanning}
             >
               <ha-icon icon="mdi:refresh"></ha-icon>
             </button>
-            <span class="pill" style="background:${style.bg}; color:${style.fg};">
-              <span class="pill-dot"></span>${status}
+            <span class="pill" style="background:${style.bg}; color:${style.fg};" aria-label="Plan status: ${status}">
+              <span class="pill-dot" aria-hidden="true"></span>${status}
             </span>
             <ha-switch
               .checked=${smart?.state === "on"}
+              aria-label="Master charging toggle"
               @change=${this._toggle}
             ></ha-switch>
           </div>
@@ -207,7 +209,14 @@ export class EvStatus extends LitElement {
                   <span>SoC ${soc.toFixed(0)}%</span>
                   <span>${Number.isFinite(target) ? "target " + target.toFixed(0) + "%" : ""}</span>
                 </div>
-                <div class="soc-track">
+                <div
+                  class="soc-track"
+                  role="progressbar"
+                  aria-valuenow="${soc}"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-label="State of charge"
+                >
                   <div class="soc-fill" style="width:${Math.max(0, Math.min(100, soc))}%"></div>
                   ${Number.isFinite(target)
                     ? html`<div class="soc-target" style="left:${Math.max(0, Math.min(100, target))}%"></div>`

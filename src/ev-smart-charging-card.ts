@@ -90,7 +90,7 @@ export class EvSmartChargingCard extends LitElement {
     const show = new Set(this._config.show ?? DEFAULT_SHOW);
     return html`
       <ha-card>
-        <div class="grid">
+        <div class="grid" role="region" aria-label="Smart EV Charging">
           ${show.has("status") ? html`<ev-status
   .hass=${this.hass}
   .entities=${this._entities}

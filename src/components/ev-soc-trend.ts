@@ -4,6 +4,7 @@ import { fetchHistory } from "../lib/history.js";
 import type { StateSample } from "../lib/history.js";
 import { cssVar } from "../lib/theme.js";
 import type { DeviceEntities, HomeAssistant } from "../types.js";
+import "./hover-tooltip.js";
 
 @customElement("ev-soc-trend")
 export class EvSocTrend extends LitElement {
@@ -13,6 +14,7 @@ export class EvSocTrend extends LitElement {
 
   @state() private _series?: StateSample[];
   @state() private _error: string | null = null;
+  @state() private _tip = { visible: false, x: 0, y: 0, text: "" };
   private _lastKey = "";
 
   static override styles = css`
@@ -23,6 +25,7 @@ export class EvSocTrend extends LitElement {
       padding: 12px;
       overflow: hidden;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      position: relative;
     }
     h3 {
       margin: 0 0 8px;
@@ -41,6 +44,17 @@ export class EvSocTrend extends LitElement {
       display: block;
     }
     .empty { color: ${unsafeCSS(cssVar("secondaryText", "#94a3b8"))}; font-style: italic; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
   `;
 
   override updated() {
@@ -77,15 +91,51 @@ export class EvSocTrend extends LitElement {
 
     return html`
       <div class="tile">
-        <h3>SoC — ${this.days}d</h3>
+        <h3 id="soc-title">SoC — ${this.days}d</h3>
         <div class="graph-wrap">
-          <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+          <svg
+            viewBox="0 0 ${W} ${H}"
+            preserveAspectRatio="none"
+            role="img"
+            aria-labelledby="soc-title"
+            aria-describedby="soc-desc"
+            @mousemove=${this._onMove(samples)}
+            @mouseleave=${this._onLeave}
+          >
             <polyline points="${pts}" fill="none" stroke="${cssVar("success", "#22c55e")}" stroke-width="1.5" />
           </svg>
         </div>
+        <span id="soc-desc" class="sr-only">
+          State of charge trend over the last ${this.days} days. Hover to see value at a point in time.
+        </span>
+        <ev-hover-tooltip
+          .visible=${this._tip.visible}
+          .x=${this._tip.x}
+          .y=${this._tip.y}
+          .text=${this._tip.text}
+        ></ev-hover-tooltip>
       </div>
     `;
   }
+
+  private _onMove = (samples: StateSample[]) => (e: MouseEvent) => {
+    const svgEl = e.currentTarget as SVGSVGElement;
+    const rect = svgEl.getBoundingClientRect();
+    const ratioX = (e.clientX - rect.left) / rect.width;
+    const idx = Math.min(samples.length - 1, Math.max(0, Math.floor(ratioX * samples.length)));
+    const sample = samples[idx];
+    if (!sample) return;
+    const text = `${new Date(sample.t).toLocaleString()} · ${Number(sample.state).toFixed(0)}%`;
+    const tileRect = svgEl.closest(".tile")!.getBoundingClientRect();
+    this._tip = {
+      visible: true,
+      x: e.clientX - tileRect.left,
+      y: e.clientY - tileRect.top,
+      text,
+    };
+  };
+
+  private _onLeave = () => { this._tip = { ...this._tip, visible: false }; };
 
   private async _fetch() {
     if (!this.entities.socEntity) return;
