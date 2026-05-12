@@ -50,7 +50,9 @@ export class EvActions extends LitElement {
     button.charge { background: rgba(245,158,11,0.18); color: ${unsafeCSS(cssVar("warning", "#d97706"))}; }
     button.set    { background: rgba(34,197,94,0.18); color: ${unsafeCSS(cssVar("success", "#16a34a"))}; }
     button.clear  { background: rgba(239,68,68,0.15); color: ${unsafeCSS(cssVar("error", "#ef4444"))}; }
-    button:disabled { cursor: progress; opacity: 0.7; }
+    button:disabled { cursor: not-allowed; opacity: 0.5; }
+    button:disabled:hover { filter: none; }
+    button.spinning:disabled { cursor: progress; opacity: 0.7; }
     button.spinning ha-icon { animation: spin 0.9s linear infinite; }
     @keyframes spin {
       from { transform: rotate(0deg); }
@@ -62,13 +64,17 @@ export class EvActions extends LitElement {
     const initial = this.hass.states[this.entities.effectiveDeparture]?.state ?? "06:00";
     const overrideActive =
       (this.hass.states[this.entities.effectiveDeparture]?.attributes.source ?? "default") === "one_off";
+    const unplugged = this.hass.states[this.entities.pluggedIn]?.state === "off";
 
     return html`
       <div class="tile">
         <button
           class="charge"
-          title="Charge immediately, ignoring the price plan, until target SoC or unplug."
+          title="${unplugged
+            ? "Car is unplugged — plug in to force charge."
+            : "Charge immediately, ignoring the price plan, until target SoC or unplug."}"
           aria-label="Charge now"
+          ?disabled=${unplugged}
           @click=${this._chargeNow}
         >
           <ha-icon icon="mdi:flash"></ha-icon> Charge now

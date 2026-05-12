@@ -15,6 +15,37 @@ function withOneOffActive(hass: ReturnType<typeof stubHass>): ReturnType<typeof 
   return hass;
 }
 
+describe("ev-actions charge-now plugged-in guard", () => {
+  it("disables Charge now when plugged_in is off", async () => {
+    const hass = stubHass({
+      states: { "binary_sensor.daily_plugged_in": { state: "off" } },
+    });
+    const ents = discover(hass, "test_dev");
+    const el = document.createElement("ev-actions") as EvActions;
+    el.hass = hass;
+    el.entities = ents;
+    document.body.appendChild(el);
+    await el.updateComplete;
+    const btn = el.shadowRoot!.querySelector<HTMLButtonElement>("button.charge")!;
+    expect(btn.disabled).toBe(true);
+    expect(btn.title).toMatch(/unplugged/i);
+  });
+
+  it("enables Charge now when plugged_in is on", async () => {
+    const hass = stubHass({
+      states: { "binary_sensor.daily_plugged_in": { state: "on" } },
+    });
+    const ents = discover(hass, "test_dev");
+    const el = document.createElement("ev-actions") as EvActions;
+    el.hass = hass;
+    el.entities = ents;
+    document.body.appendChild(el);
+    await el.updateComplete;
+    const btn = el.shadowRoot!.querySelector<HTMLButtonElement>("button.charge")!;
+    expect(btn.disabled).toBe(false);
+  });
+});
+
 describe("ev-actions clear-override loading state", () => {
   it("disables the clear button and shows spinner while service call is pending", async () => {
     const hass = withOneOffActive(stubHass());
