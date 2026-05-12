@@ -1,12 +1,12 @@
 import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import type { CardConfig, ShowTile } from "./types.js";
+import type { CardConfig, HomeAssistant, ShowTile } from "./types.js";
 
 const ALL_TILES: ShowTile[] = ["status", "timeline", "window", "history", "soc", "actions"];
 
 @customElement("ev-smart-charging-card-editor")
 export class EvSmartChargingCardEditor extends LitElement {
-  @property({ attribute: false }) hass?: unknown;
+  @property({ attribute: false }) hass?: HomeAssistant;
   @state() private _config: Partial<CardConfig> = {};
 
   setConfig(config: Partial<CardConfig>) {
@@ -24,9 +24,18 @@ export class EvSmartChargingCardEditor extends LitElement {
 
   override render() {
     return html`
-      <label>Device ID
-        <input type="text" name="device_id" .value=${this._config.device_id ?? ""}
-          @input=${this._setField("device_id")} />
+      <label>Device
+        ${this.hass
+          ? html`
+              <ha-selector
+                .hass=${this.hass}
+                .selector=${{ device: { integration: "smart_ev_charging" } }}
+                .value=${this._config.device_id ?? ""}
+                @value-changed=${this._onDeviceChanged}
+              ></ha-selector>
+            `
+          : html`<input type="text" name="device_id" .value=${this._config.device_id ?? ""}
+              @input=${this._setField("device_id")} />`}
       </label>
       <label>Name (optional)
         <input type="text" name="name" .value=${this._config.name ?? ""}
@@ -62,6 +71,12 @@ export class EvSmartChargingCardEditor extends LitElement {
   private _emit() {
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this._config }, bubbles: true, composed: true }));
   }
+
+  private _onDeviceChanged = (e: CustomEvent<{ value: string }>) => {
+    const v = e.detail.value;
+    this._config = { ...this._config, device_id: v || "" };
+    this._emit();
+  };
 
   private _setField = (key: keyof CardConfig) => (e: Event) => {
     const v = (e.target as HTMLInputElement).value;
