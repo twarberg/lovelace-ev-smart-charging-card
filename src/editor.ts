@@ -20,6 +20,7 @@ export class EvSmartChargingCardEditor extends LitElement {
     fieldset { border: 1px solid #ddd; padding: 8px; margin-top: 8px; }
     legend { font-size: 0.85em; }
     label.inline { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; }
+    .hint { display: block; font-size: 0.78em; color: #6b7280; margin-top: 2px; line-height: 1.3; }
   `;
 
   override render() {
@@ -36,27 +37,33 @@ export class EvSmartChargingCardEditor extends LitElement {
             `
           : html`<input type="text" name="device_id" .value=${this._config.device_id ?? ""}
               @input=${this._setField("device_id")} />`}
+        <span class="hint">Pick the Smart EV Charging device (one per car / charger combination).</span>
       </label>
       <label>Name (optional)
         <input type="text" name="name" .value=${this._config.name ?? ""}
           @input=${this._setField("name")} />
+        <span class="hint">Display title above the card. Defaults to the device name.</span>
       </label>
       <label>History days (7–90)
         <input type="number" name="history_days" min="7" max="90"
           .value=${String(this._config.history_days ?? 30)}
           @input=${this._setNumber("history_days")} />
+        <span class="hint">How many days of past charging sessions to show in the cost-history chart. Higher = more bars, slower load.</span>
       </label>
       <label>SoC days (1–30)
         <input type="number" name="soc_days" min="1" max="30"
           .value=${String(this._config.soc_days ?? 7)}
           @input=${this._setNumber("soc_days")} />
+        <span class="hint">How many days of state-of-charge history to plot. Only shown if the integration is configured with a SoC sensor.</span>
       </label>
       <label>Helper entity (optional)
         <input type="text" name="helper_entity" .value=${this._config.helper_entity ?? ""}
           @input=${this._setField("helper_entity")} />
+        <span class="hint">If you use an input_datetime helper + automation to apply one-off deadlines, point at it here. Leave blank to call the service directly.</span>
       </label>
       <fieldset>
         <legend>Show tiles</legend>
+        <span class="hint">Toggle which tiles render in the card.</span>
         ${ALL_TILES.map((t) => html`
           <label class="inline">
             <input type="checkbox" name="show_${t}"
