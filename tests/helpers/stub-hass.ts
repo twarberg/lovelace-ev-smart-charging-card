@@ -67,6 +67,20 @@ export function stubHass(opts: StubOpts = {}): HomeAssistant {
       },
     };
   }
+  // Merge in any extra states (e.g. sensor.test_prices) that aren't in the KEYS list
+  for (const [entityId, partial] of Object.entries(opts.states ?? {})) {
+    if (!(entityId in states)) {
+      states[entityId] = {
+        entity_id: entityId,
+        state: "ok",
+        attributes: {},
+        last_changed: new Date(0).toISOString(),
+        last_updated: new Date(0).toISOString(),
+        ...partial,
+      };
+    }
+  }
+
   return {
     states,
     entities: entries,
