@@ -1,0 +1,30 @@
+{
+  "tiles": {
+    "status": "Status",
+    "timeline": "Price & plan",
+    "window": "Charge window",
+    "history": "History",
+    "soc": "State of charge",
+    "actions": "Actions"
+  },
+  "actions": {
+    "replan": "Replan",
+    "force": "Force charge",
+    "skip": "Skip 1h",
+    "set_deadline": "Set deadline",
+    "clear_override": "Clear override"
+  },
+  "labels": {
+    "smart_on": "Smart: ON",
+    "smart_off": "Smart: OFF",
+    "deadline": "Deadline",
+    "one_off_active": "one-off override active",
+    "no_charging_planned": "No charging planned",
+    "no_price_data": "No price data yet",
+    "no_soc_entity": "No SoC entity configured",
+    "loading": "Loading…",
+    "estimated_total": "Estimated total",
+    "total": "Total",
+    "sessions": "sessions"
+  }
+}
