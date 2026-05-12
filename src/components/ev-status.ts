@@ -34,6 +34,7 @@ export class EvStatus extends LitElement {
       display: flex;
       flex-direction: column;
       gap: 10px;
+      overflow: hidden;
     }
     .header {
       display: flex;
@@ -66,12 +67,11 @@ export class EvStatus extends LitElement {
       text-transform: capitalize;
     }
     .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-    .toggle-wrap {
+    .controls {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 0.85em;
-      color: ${unsafeCSS(cssVar("secondaryText", "#475569"))};
+      gap: 10px;
+      margin-left: auto;
     }
     .meta {
       display: flex;
@@ -101,13 +101,14 @@ export class EvStatus extends LitElement {
     .soc-track {
       height: 8px;
       background: ${unsafeCSS(cssVar("divider", "#e5e7eb"))};
-      border-radius: 999px;
+      border-radius: 0;
       overflow: visible;
       position: relative;
+      margin: 4px -14px 0;
     }
     .soc-fill {
       height: 100%;
-      border-radius: 999px;
+      border-radius: 0;
       background: linear-gradient(90deg, ${unsafeCSS(cssVar("primary", "#3b82f6"))}, ${unsafeCSS(cssVar("success", "#22c55e"))});
       transition: width .35s ease;
     }
@@ -142,10 +143,10 @@ export class EvStatus extends LitElement {
             <ha-icon class="title-icon" icon="mdi:car-electric"></ha-icon>
             <span class="name">${titleFromId}</span>
           </div>
-          <span class="pill" style="background:${style.bg}; color:${style.fg};">
-            <span class="pill-dot"></span>${status}
-          </span>
-          <div class="toggle-wrap">
+          <div class="controls">
+            <span class="pill" style="background:${style.bg}; color:${style.fg};">
+              <span class="pill-dot"></span>${status}
+            </span>
             <ha-switch
               .checked=${smart?.state === "on"}
               @change=${this._toggle}
