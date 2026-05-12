@@ -24,7 +24,7 @@ export class EvActions extends LitElement {
     }
     button {
       flex: 1 1 auto;
-      min-width: 110px;
+      min-width: 130px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -41,11 +41,10 @@ export class EvActions extends LitElement {
     }
     button:hover { filter: brightness(0.95); }
     button:active { transform: translateY(1px); }
+    button:focus-visible { outline: 2px solid ${unsafeCSS(cssVar("primary", "#3b82f6"))}; outline-offset: 2px; }
     button ha-icon { --mdc-icon-size: 18px; }
 
-    button.replan { background: rgba(59,130,246,0.15); color: ${unsafeCSS(cssVar("primary", "#3b82f6"))}; }
-    button.force  { background: rgba(245,158,11,0.18); color: ${unsafeCSS(cssVar("warning", "#d97706"))}; }
-    button.skip   { background: rgba(148,163,184,0.20); color: ${unsafeCSS(cssVar("secondaryText", "#475569"))}; }
+    button.charge { background: rgba(245,158,11,0.18); color: ${unsafeCSS(cssVar("warning", "#d97706"))}; }
     button.set    { background: rgba(34,197,94,0.18); color: ${unsafeCSS(cssVar("success", "#16a34a"))}; }
     button.clear  { background: rgba(239,68,68,0.15); color: ${unsafeCSS(cssVar("error", "#ef4444"))}; }
   `;
@@ -57,20 +56,29 @@ export class EvActions extends LitElement {
 
     return html`
       <div class="tile">
-        <button class="replan" @click=${this._replan}>
-          <ha-icon icon="mdi:refresh"></ha-icon> Replan
+        <button
+          class="charge"
+          title="Charge immediately, ignoring the price plan, until target SoC or unplug."
+          aria-label="Charge now"
+          @click=${this._chargeNow}
+        >
+          <ha-icon icon="mdi:flash"></ha-icon> Charge now
         </button>
-        <button class="force" @click=${this._force}>
-          <ha-icon icon="mdi:flash"></ha-icon> Force 2h
-        </button>
-        <button class="skip" @click=${this._skip}>
-          <ha-icon icon="mdi:fast-forward"></ha-icon> Skip 1h
-        </button>
-        <button class="set" @click=${this._openDeadline}>
-          <ha-icon icon="mdi:clock-edit-outline"></ha-icon> Set deadline
+        <button
+          class="set"
+          title="One-time override of the departure deadline for the next charge cycle only. Reverts after the deadline passes."
+          aria-label="Set one-off departure"
+          @click=${this._openDeadline}
+        >
+          <ha-icon icon="mdi:clock-edit-outline"></ha-icon> Set departure
         </button>
         ${overrideActive
-          ? html`<button class="clear" @click=${this._clearOverride}>
+          ? html`<button
+              class="clear"
+              title="Clear the active one-off departure override."
+              aria-label="Clear override"
+              @click=${this._clearOverride}
+            >
               <ha-icon icon="mdi:close-circle-outline"></ha-icon> Clear
             </button>`
           : ""}
@@ -84,15 +92,8 @@ export class EvActions extends LitElement {
     `;
   }
 
-  private _replan = () => {
-    void this.hass.callService("smart_ev_charging", "replan", {}, this._target());
-  };
-  private _force = () => {
-    void this.hass.callService("smart_ev_charging", "force_charge_now", { duration: { hours: 2 } }, this._target());
-  };
-  private _skip = () => {
-    const until = new Date(Date.now() + 3_600_000).toISOString();
-    void this.hass.callService("smart_ev_charging", "skip_until", { until }, this._target());
+  private _chargeNow = () => {
+    void this.hass.callService("smart_ev_charging", "force_charge_now", {}, this._target());
   };
   private _clearOverride = () => {
     void this.hass.callService("smart_ev_charging", "set_one_off_departure", {}, this._target());
