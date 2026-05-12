@@ -191,7 +191,7 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
       box-shadow: 0 4px 10px rgba(0,0,0,0.18);
       z-index: 9999;
     }
-  `,t([ft({type:Boolean})],St.prototype,"visible",void 0),t([ft({type:Number})],St.prototype,"x",void 0),t([ft({type:Number})],St.prototype,"y",void 0),t([ft({type:String})],St.prototype,"text",void 0),St=t([pt("ev-hover-tooltip")],St);const At=80;let Et=class extends ht{constructor(){super(...arguments),this.hours=24,this._tip={visible:!1,x:0,y:0,text:""},this._lastPrices=[],this._lastPlanned=new Set,this._onMove=t=>e=>{const i=e.currentTarget.getBoundingClientRect(),s=(e.clientX-i.left)/i.width,n=Math.min(t.length-1,Math.max(0,Math.floor(s*t.length))),r=t[n];if(!r)return;const o=`${new Date(r.start).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})} · ${r.price.toFixed(2)}`;this._tip={visible:!0,x:e.clientX,y:e.clientY,text:o}},this._onLeave=()=>{this._tip={...this._tip,visible:!1}},this._emitSlot=(t,e)=>{const i={start:t.start,end:t.end,isPlanned:e,price:t.price};this.dispatchEvent(new CustomEvent("slot-click",{detail:i,bubbles:!0,composed:!0}))}}render(){const t=this._prices().slice(0,Math.max(1,Math.min(this.hours,48)));if(this._lastPrices=t,0===t.length)return this._lastPlanned=new Set,W`<div class="tile"><h3>Price &amp; plan</h3><div class="empty">No price data yet</div></div>`;const e=this.hass.states[this.entities.plannedHours]?.attributes;this._lastPlanned=new Set(e?.hours??[]);const i=Math.min(...t.map(t=>t.price)),s=Math.max(...t.map(t=>t.price)),n=s-i||1,r=480/t.length,o=t.map((t,e)=>{const s=72-(t.price-i)/n*64;return`${(e*r+r/2).toFixed(1)},${s.toFixed(1)}`}).join(" "),a=new Date,l=t.findIndex(t=>new Date(t.start)<=a&&a<new Date(t.end)),c=l>=0?l*r+r*((a.getTime()-new Date(t[l].start).getTime())/36e5):-1;return W`
+  `,t([ft({type:Boolean})],St.prototype,"visible",void 0),t([ft({type:Number})],St.prototype,"x",void 0),t([ft({type:Number})],St.prototype,"y",void 0),t([ft({type:String})],St.prototype,"text",void 0),St=t([pt("ev-hover-tooltip")],St);const At=80;let Et=class extends ht{constructor(){super(...arguments),this.hours=36,this._tip={visible:!1,x:0,y:0,text:""},this._lastPrices=[],this._lastPlanned=new Set,this._onMove=t=>e=>{const i=e.currentTarget.getBoundingClientRect(),s=(e.clientX-i.left)/i.width,n=Math.min(t.length-1,Math.max(0,Math.floor(s*t.length))),r=t[n];if(!r)return;const o=`${new Date(r.start).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})} · ${r.price.toFixed(2)}`;this._tip={visible:!0,x:e.clientX,y:e.clientY,text:o}},this._onLeave=()=>{this._tip={...this._tip,visible:!1}},this._emitSlot=(t,e)=>{const i={start:t.start,end:t.end,isPlanned:e,price:t.price};this.dispatchEvent(new CustomEvent("slot-click",{detail:i,bubbles:!0,composed:!0}))}}render(){const t=this._prices().slice(0,Math.max(1,Math.min(this.hours,48)));if(this._lastPrices=t,0===t.length)return this._lastPlanned=new Set,W`<div class="tile"><h3>Price &amp; plan</h3><div class="empty">No price data yet</div></div>`;const e=this.hass.states[this.entities.plannedHours]?.attributes;this._lastPlanned=new Set(e?.hours??[]);const i=Math.min(...t.map(t=>t.price)),s=Math.max(...t.map(t=>t.price)),n=s-i||1,r=480/t.length,o=t.map((t,e)=>{const s=72-(t.price-i)/n*64;return`${(e*r+r/2).toFixed(1)},${s.toFixed(1)}`}).join(" "),a=new Date,l=t.findIndex(t=>new Date(t.start)<=a&&a<new Date(t.end)),c=l>=0?l*r+r*((a.getTime()-new Date(t[l].start).getTime())/36e5):-1;return W`
       <div class="tile">
         <h3 id="timeline-title">Price &amp; plan — next ${t.length}h</h3>
         <svg
@@ -587,7 +587,7 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
 ></ev-status>`:""}
           ${t.has("timeline")?W`<ev-timeline class="span2"
             .hass=${this.hass} .entities=${this._entities}
-            .hours=${this._config.timeline_hours??24}
+            .hours=${this._config.timeline_hours??36}
             @slot-click=${this._onSlotClick}></ev-timeline>`:""}
           ${t.has("window")?W`<ev-window .hass=${this.hass} .entities=${this._entities}></ev-window>`:""}
           ${t.has("history")?W`<ev-history .hass=${this.hass} .entities=${this._entities}
@@ -648,9 +648,9 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
       </label>
       <label>Timeline hours (12–48)
         <input type="number" name="timeline_hours" min="12" max="48"
-          .value=${String(this._config.timeline_hours??24)}
+          .value=${String(this._config.timeline_hours??36)}
           @input=${this._setNumber("timeline_hours")} />
-        <span class="hint">How many hours of price + plan data the timeline shows. Strømligning publishes 48 hours; defaults to 24 for a compact chart.</span>
+        <span class="hint">How many hours of price + plan data the timeline shows. Strømligning publishes 48 hours; defaults to 36 for a compact chart.</span>
       </label>
       <label>Helper entity (optional)
         <input type="text" name="helper_entity" .value=${this._config.helper_entity??""}

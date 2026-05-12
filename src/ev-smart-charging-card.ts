@@ -98,7 +98,7 @@ export class EvSmartChargingCard extends LitElement {
 ></ev-status>` : ""}
           ${show.has("timeline") ? html`<ev-timeline class="span2"
             .hass=${this.hass} .entities=${this._entities}
-            .hours=${this._config.timeline_hours ?? 24}
+            .hours=${this._config.timeline_hours ?? 36}
             @slot-click=${this._onSlotClick}></ev-timeline>` : ""}
           ${show.has("window") ? html`<ev-window .hass=${this.hass} .entities=${this._entities}></ev-window>` : ""}
           ${show.has("history") ? html`<ev-history .hass=${this.hass} .entities=${this._entities}
