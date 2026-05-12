@@ -21,13 +21,15 @@ export class EvActions extends LitElement {
 
   override render() {
     const initial = this.hass.states[this.entities.effectiveDeparture]?.state ?? "06:00";
+    const overrideActive =
+      (this.hass.states[this.entities.effectiveDeparture]?.attributes.source ?? "default") === "one_off";
     return html`
       <div class="tile">
         <button @click=${this._replan}>Replan</button>
         <button @click=${this._force}>Force charge (2h)</button>
         <button @click=${this._skip}>Skip 1h</button>
         <button @click=${this._openDeadline}>Set deadline</button>
-        <button @click=${this._clearOverride}>Clear override</button>
+        ${overrideActive ? html`<button @click=${this._clearOverride}>Clear override</button>` : ""}
       </div>
       <ev-deadline-picker
         .initialTime=${initial}
