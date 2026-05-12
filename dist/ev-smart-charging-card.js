@@ -201,7 +201,7 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
       </div>
     `}};function Ct(t,e){const i=new Date(e).getTime()-new Date(t).getTime();return{start:t,end:e,durationHours:Math.max(0,i/36e5)}}function Tt(t,e,i){return t.map(t=>{const s=function(t,e,i){const s=new Date(e).getTime(),n=new Date(i).getTime();let r=0,o=0;for(const e of t){const t=new Date(e.start).getTime(),i=new Date(e.end).getTime(),a=Math.max(0,Math.min(n,i)-Math.max(s,t));if(0===a)continue;const l=a/36e5;r+=e.price*l,o+=l}return o>0?r/o:0}(e,t.start,t.end),n=t.durationHours*i;return{...t,kwh:n,cost:n*s}})}async function Nt(t,e,i,s){const n=await t.callWS({type:"history/history_during_period",start_time:i.toISOString(),end_time:s.toISOString(),entity_ids:e,minimal_response:!0,no_attributes:!0}),r={};for(const[t,e]of Object.entries(n))r[t]=e.map(t=>Pt(t)).filter(t=>null!==t);return r}function Pt(t){const e="string"==typeof t.s?t.s:"string"==typeof t.state?t.state:null;if(null===e)return null;const i=t.lu??t.last_updated;let s;if("number"==typeof i&&Number.isFinite(i))s=i;else{if("string"!=typeof i)return null;{const t=Date.parse(i);if(Number.isNaN(t))return null;s=t/1e3}}return{state:e,t:new Date(1e3*s).toISOString()}}kt.styles=a`
     :host { display: block; }
-    .tile { background: ${o(xt("cardBg","#fff"))}; border-radius: 12px; padding: 12px; }
+    .tile { background: ${o(xt("cardBg","#fff"))}; border-radius: 12px; padding: 12px; overflow: hidden; }
     h3 { margin: 0 0 8px; font-size: 0.95em; color: ${o(xt("secondaryText","#475569"))}; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
     table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
     th, td { padding: 4px 6px; border-bottom: 1px solid ${o(xt("divider","#eee"))}; text-align: right; }
@@ -232,7 +232,7 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
       </div>
     `}async _fetch(){this._error=null,this._loading=!0;try{const t=new Date,e=new Date(t.getTime()-864e5*this.days),i=[this.entities.chargeNow];this.entities.priceEntity&&i.push(this.entities.priceEntity);const s=await Nt(this.hass,i,e,t);"undefined"!=typeof console&&console.debug("ev-history fetch",{days:this.days,chargeNow:this.entities.chargeNow,samples:s[this.entities.chargeNow]?.length??0});const n=function(t,e){const i=[];let s=null;for(const e of t)"on"===e.state&&null===s?s=e.t:"on"!==e.state&&null!==s&&(i.push(Ct(s,e.t)),s=null);if(null!==s){const t=e??(new Date).toISOString();i.push(Ct(s,t))}return i}(s[this.entities.chargeNow]??[],t.toISOString()),r=this.entities.priceEntity?this.hass.states[this.entities.priceEntity]?.attributes.prices??[]:[],o=this.entities.chargerKw??11;this._buckets=function(t){const e=new Map;for(const i of t){const t=new Date(i.start).toISOString().slice(0,10),s=e.get(t)??{date:t,cost:0,sessions:[]};s.cost+=i.cost??0,s.sessions.push(i),e.set(t,s)}return[...e.values()].sort((t,e)=>t.date.localeCompare(e.date))}(Tt(n,r,o))}catch(t){this._error=`History fetch failed: ${t.message}`}finally{this._loading=!1}}};Ot.styles=a`
     :host { display: block; }
-    .tile { background: ${o(xt("cardBg","#fff"))}; border-radius: 12px; padding: 12px; }
+    .tile { background: ${o(xt("cardBg","#fff"))}; border-radius: 12px; padding: 12px; overflow: hidden; }
     h3 { margin: 0 0 8px; font-size: 0.95em; color: ${o(xt("secondaryText","#475569"))}; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
     .header { display: flex; justify-content: space-between; font-size: 0.85em; color: ${o(xt("secondaryText","#475569"))}; margin-bottom: 6px; gap: 8px; flex-wrap: nowrap; }
     .header > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -420,6 +420,7 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
       background: ${o(xt("cardBg","#fff"))};
       border-radius: 12px;
       padding: 12px;
+      overflow: hidden;
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
@@ -478,7 +479,7 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
       gap: 10px;
       padding: 6px;
     }
@@ -487,9 +488,6 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
     .error { padding: 14px; color: ${o(xt("error","#ef4444"))}; }
     ::slotted(*), ev-status, ev-timeline, ev-window, ev-history, ev-soc-trend, ev-actions {
       filter: drop-shadow(0 1px 2px rgba(15,23,42,0.06));
-    }
-    @media (max-width: 600px) {
-      .span2 { grid-column: span 1; }
     }
   `,t([ft({attribute:!1})],Rt.prototype,"hass",void 0),t([mt()],Rt.prototype,"_config",void 0),t([mt()],Rt.prototype,"_entities",void 0),t([mt()],Rt.prototype,"_error",void 0),Rt=t([pt("ev-smart-charging-card")],Rt),(Ut=window).customCards||(Ut.customCards=[]),window.customCards.push({type:"ev-smart-charging-card",name:"Smart EV Charging",description:"Status, plan timeline, history and actions for the Smart EV Charging integration.",preview:!1}),console.info("%c ev-smart-charging-card%c v0.1.0 ","color:white;background:#3b82f6;font-weight:700","color:#3b82f6");const jt=["status","timeline","window","history","soc","actions"];let Bt=class extends ht{constructor(){super(...arguments),this._config={},this._onDeviceChanged=t=>{const e=t.detail.value;this._config={...this._config,device_id:e||""},this._emit()},this._setField=t=>e=>{const i=e.target.value;this._config={...this._config,[t]:i||void 0},this._emit()},this._setNumber=t=>e=>{const i=Number(e.target.value);this._config={...this._config,[t]:Number.isFinite(i)?i:void 0},this._emit()},this._toggleTile=t=>e=>{const i=e.target.checked,s=new Set(this._config.show??jt);i?s.add(t):s.delete(t),this._config={...this._config,show:[...s]},this._emit()}}setConfig(t){this._config={...t}}render(){return W`
       <label>Device
