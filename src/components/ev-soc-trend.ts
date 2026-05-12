@@ -22,6 +22,7 @@ export class EvSocTrend extends LitElement {
       border-radius: 12px;
       padding: 12px;
       overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
     h3 {
       margin: 0 0 8px;
