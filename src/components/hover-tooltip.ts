@@ -13,13 +13,9 @@ export class EvHoverTooltip extends LitElement {
     :host {
       display: block;
       pointer-events: none;
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 50;
     }
     .box {
-      position: absolute;
+      position: fixed;
       transform: translate(-50%, calc(-100% - 8px));
       background: ${unsafeCSS(cssVar("primaryText", "#0f172a"))};
       color: ${unsafeCSS(cssVar("cardBg", "#fff"))};
@@ -29,6 +25,7 @@ export class EvHoverTooltip extends LitElement {
       font-weight: 500;
       white-space: nowrap;
       box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+      z-index: 9999;
     }
   `;
 
