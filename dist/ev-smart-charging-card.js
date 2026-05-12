@@ -233,8 +233,9 @@ function t(t,e,i,s){var n,r=arguments.length,o=r<3?e:null===s?s=Object.getOwnPro
     `}async _fetch(){this._error=null,this._loading=!0;try{const t=new Date,e=new Date(t.getTime()-864e5*this.days),i=[this.entities.chargeNow];this.entities.priceEntity&&i.push(this.entities.priceEntity);const s=await Nt(this.hass,i,e,t);"undefined"!=typeof console&&console.debug("ev-history fetch",{days:this.days,chargeNow:this.entities.chargeNow,samples:s[this.entities.chargeNow]?.length??0});const n=function(t,e){const i=[];let s=null;for(const e of t)"on"===e.state&&null===s?s=e.t:"on"!==e.state&&null!==s&&(i.push(Ct(s,e.t)),s=null);if(null!==s){const t=e??(new Date).toISOString();i.push(Ct(s,t))}return i}(s[this.entities.chargeNow]??[],t.toISOString()),r=this.entities.priceEntity?this.hass.states[this.entities.priceEntity]?.attributes.prices??[]:[],o=this.entities.chargerKw??11;this._buckets=function(t){const e=new Map;for(const i of t){const t=new Date(i.start).toISOString().slice(0,10),s=e.get(t)??{date:t,cost:0,sessions:[]};s.cost+=i.cost??0,s.sessions.push(i),e.set(t,s)}return[...e.values()].sort((t,e)=>t.date.localeCompare(e.date))}(Tt(n,r,o))}catch(t){this._error=`History fetch failed: ${t.message}`}finally{this._loading=!1}}};Ot.styles=a`
     :host { display: block; }
     .tile { background: ${o(xt("cardBg","#fff"))}; border-radius: 12px; padding: 12px; }
-    h3 { margin: 0 0 8px; font-size: 0.95em; color: ${o(xt("secondaryText","#475569"))}; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-    .header { display: flex; justify-content: space-between; font-size: 0.85em; color: ${o(xt("secondaryText","#475569"))}; margin-bottom: 6px; }
+    h3 { margin: 0 0 8px; font-size: 0.95em; color: ${o(xt("secondaryText","#475569"))}; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+    .header { display: flex; justify-content: space-between; font-size: 0.85em; color: ${o(xt("secondaryText","#475569"))}; margin-bottom: 6px; gap: 8px; flex-wrap: nowrap; }
+    .header > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     svg { width: 100%; height: 80px; display: block; }
     .bar { cursor: pointer; }
     .bar:hover { opacity: 0.7; }
