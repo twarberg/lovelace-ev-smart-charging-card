@@ -11,6 +11,7 @@ export class EvActions extends LitElement {
   @property({ type: String }) helperEntity = "";
 
   @state() private _deadlineOpen = false;
+  @state() private _clearing = false;
 
   static override styles = css`
     :host { display: block; }
@@ -49,6 +50,12 @@ export class EvActions extends LitElement {
     button.charge { background: rgba(245,158,11,0.18); color: ${unsafeCSS(cssVar("warning", "#d97706"))}; }
     button.set    { background: rgba(34,197,94,0.18); color: ${unsafeCSS(cssVar("success", "#16a34a"))}; }
     button.clear  { background: rgba(239,68,68,0.15); color: ${unsafeCSS(cssVar("error", "#ef4444"))}; }
+    button:disabled { cursor: progress; opacity: 0.7; }
+    button.spinning ha-icon { animation: spin 0.9s linear infinite; }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
   `;
 
   override render() {
@@ -76,12 +83,15 @@ export class EvActions extends LitElement {
         </button>
         ${overrideActive
           ? html`<button
-              class="clear"
+              class="clear ${this._clearing ? "spinning" : ""}"
               title="Clear the active one-off departure override."
               aria-label="Clear override"
+              aria-busy=${this._clearing ? "true" : "false"}
+              ?disabled=${this._clearing}
               @click=${this._clearOverride}
             >
-              <ha-icon icon="mdi:close-circle-outline"></ha-icon> Clear
+              <ha-icon icon="${this._clearing ? "mdi:loading" : "mdi:close-circle-outline"}"></ha-icon>
+              ${this._clearing ? "Clearing…" : "Clear"}
             </button>`
           : ""}
       </div>
@@ -97,8 +107,14 @@ export class EvActions extends LitElement {
   private _chargeNow = () => {
     void this.hass.callService("smart_ev_charging", "force_charge_now", {}, this._target());
   };
-  private _clearOverride = () => {
-    void this.hass.callService("smart_ev_charging", "set_one_off_departure", {}, this._target());
+  private _clearOverride = async () => {
+    if (this._clearing) return;
+    this._clearing = true;
+    try {
+      await this.hass.callService("smart_ev_charging", "set_one_off_departure", {}, this._target());
+    } finally {
+      setTimeout(() => { this._clearing = false; }, 400);
+    }
   };
   private _openDeadline = () => {
     this._deadlineOpen = true;
