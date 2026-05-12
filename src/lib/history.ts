@@ -92,7 +92,7 @@ export async function fetchHistory(
   start: Date,
   end: Date,
 ): Promise<Record<string, StateSample[]>> {
-  const res = await hass.callWS<Record<string, Array<{ s: string; lu: number }>>>({
+  const res = await hass.callWS<Record<string, Array<Record<string, unknown>>>>({
     type: "history/history_during_period",
     start_time: start.toISOString(),
     end_time: end.toISOString(),
@@ -102,7 +102,27 @@ export async function fetchHistory(
   });
   const out: Record<string, StateSample[]> = {};
   for (const [eid, items] of Object.entries(res)) {
-    out[eid] = items.map((it) => ({ state: it.s, t: new Date(it.lu * 1000).toISOString() }));
+    out[eid] = items.map((it) => normalizeStateItem(it)).filter((s): s is StateSample => s !== null);
   }
   return out;
+}
+
+function normalizeStateItem(it: Record<string, unknown>): StateSample | null {
+  // First item: full state object — { state, last_updated (ts|ISO), ... }
+  // Subsequent items (minimal_response=true): { s, lu (ts) }
+  const state = typeof it.s === "string" ? it.s : typeof it.state === "string" ? it.state : null;
+  if (state === null) return null;
+
+  const luRaw: unknown = it.lu ?? it.last_updated;
+  let ts: number;
+  if (typeof luRaw === "number" && Number.isFinite(luRaw)) {
+    ts = luRaw;
+  } else if (typeof luRaw === "string") {
+    const parsed = Date.parse(luRaw);
+    if (Number.isNaN(parsed)) return null;
+    ts = parsed / 1000;
+  } else {
+    return null;
+  }
+  return { state, t: new Date(ts * 1000).toISOString() };
 }

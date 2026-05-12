@@ -13,6 +13,7 @@ export class EvHistory extends LitElement {
   @property({ type: Number }) days = 30;
 
   @state() private _buckets?: DayBucket[];
+  @state() private _loading = false;
   @state() private _expanded: string | null = null;
   @state() private _error: string | null = null;
   private _lastFetchKey = "";
@@ -49,9 +50,11 @@ export class EvHistory extends LitElement {
 
     const body = this._error
       ? html`<div class="empty">${this._error}</div>`
-      : buckets.length === 0
+      : this._loading && !this._buckets
         ? html`<div class="empty">Loading…</div>`
-        : html`
+        : buckets.length === 0
+          ? html`<div class="empty">No charging sessions in the last ${this.days} days</div>`
+          : html`
             <svg viewBox="0 0 ${buckets.length * 8} 80">
               ${buckets.map((b, i) => {
                 const h = maxCost > 0 ? (b.cost / maxCost) * 76 : 0;
@@ -89,12 +92,20 @@ export class EvHistory extends LitElement {
 
   private async _fetch() {
     this._error = null;
+    this._loading = true;
     try {
       const end = new Date();
       const start = new Date(end.getTime() - this.days * 86_400_000);
       const ids: string[] = [this.entities.chargeNow];
       if (this.entities.priceEntity) ids.push(this.entities.priceEntity);
       const history = await fetchHistory(this.hass, ids, start, end);
+      if (typeof console !== "undefined") {
+        console.debug("ev-history fetch", {
+          days: this.days,
+          chargeNow: this.entities.chargeNow,
+          samples: history[this.entities.chargeNow]?.length ?? 0,
+        });
+      }
       const chargeSeries = history[this.entities.chargeNow] ?? [];
       const sessions = detectSessions(chargeSeries, end.toISOString());
       const pricesAttr = this.entities.priceEntity
@@ -104,6 +115,8 @@ export class EvHistory extends LitElement {
       this._buckets = rollupByDay(attachCost(sessions, pricesAttr, kw));
     } catch (e) {
       this._error = `History fetch failed: ${(e as Error).message}`;
+    } finally {
+      this._loading = false;
     }
   }
 }
