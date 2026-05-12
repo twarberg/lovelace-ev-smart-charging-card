@@ -36,6 +36,19 @@ export class EvTimeline extends LitElement {
     .planned-rect { fill: ${unsafeCSS(cssVar("success", "#22c55e"))}; opacity: 0.35; pointer-events: none; }
     .now-line { stroke: ${unsafeCSS(cssVar("primaryText", "#0f172a"))}; stroke-width: 1; stroke-dasharray: 2 2; }
     .empty { color: ${unsafeCSS(cssVar("secondaryText", "#94a3b8"))}; font-style: italic; }
+    .date-line {
+      stroke: ${unsafeCSS(cssVar("secondaryText", "#94a3b8"))};
+      stroke-width: 1;
+      stroke-dasharray: 3 3;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    .date-label {
+      fill: ${unsafeCSS(cssVar("secondaryText", "#94a3b8"))};
+      font-size: 9px;
+      font-weight: 500;
+      pointer-events: none;
+    }
     .sr-only {
       position: absolute;
       width: 1px;
@@ -166,6 +179,37 @@ export class EvTimeline extends LitElement {
 
       // Insert slot groups before the polyline so the polyline renders on top
       svgEl.insertBefore(g, svgEl.firstChild);
+    }
+
+    // Remove any previously inserted date-line / date-label elements
+    svgEl.querySelectorAll(".date-line, .date-label").forEach((n) => n.remove());
+
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    for (let i = 1; i < prices.length; i++) {
+      const prev = new Date(prices[i - 1]!.start);
+      const cur = new Date(prices[i]!.start);
+      if (
+        prev.getFullYear() !== cur.getFullYear() ||
+        prev.getMonth() !== cur.getMonth() ||
+        prev.getDate() !== cur.getDate()
+      ) {
+        const x = i * slotW;
+
+        const line = document.createElementNS(SVG_NS, "line");
+        line.setAttribute("x1", x.toFixed(1));
+        line.setAttribute("y1", "0");
+        line.setAttribute("x2", x.toFixed(1));
+        line.setAttribute("y2", String(H));
+        line.setAttribute("class", "date-line");
+        svgEl.appendChild(line);
+
+        const label = document.createElementNS(SVG_NS, "text");
+        label.setAttribute("x", (x + 3).toFixed(1));
+        label.setAttribute("y", "11");
+        label.setAttribute("class", "date-label");
+        label.textContent = cur.toLocaleDateString([], { weekday: "short", day: "2-digit" });
+        svgEl.appendChild(label);
+      }
     }
   }
 
