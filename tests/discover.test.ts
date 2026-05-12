@@ -19,6 +19,26 @@ describe("discover", () => {
     expect(d.chargerKw).toBe(11.0);
     expect(d.socEntity).toBe("sensor.test_soc");
     expect(d.targetSocEntity).toBe("number.test_target");
+    expect(d.minSocThreshold).toBe(100);
+  });
+
+  it("reads min_soc_threshold from plan_status when configured below 100", () => {
+    const hass = stubHass({
+      states: {
+        "sensor.daily_plan_status": {
+          attributes: {
+            source_price_entity: "sensor.test_prices",
+            charger_kw: 11.0,
+            soc_entity: "sensor.test_soc",
+            target_soc_entity: "number.test_target",
+            min_soc_threshold: 80,
+            min_soc_gate_active: true,
+          },
+        },
+      },
+    });
+    const d = discover(hass, "test_dev");
+    expect(d.minSocThreshold).toBe(80);
   });
 
   it("returns undefined source entities when plan_status attrs missing", () => {
@@ -29,6 +49,7 @@ describe("discover", () => {
     expect(d.priceEntity).toBeUndefined();
     expect(d.chargerKw).toBeUndefined();
     expect(d.socEntity).toBeUndefined();
+    expect(d.minSocThreshold).toBeUndefined();
   });
 
   it("throws when device has no integration entities", () => {

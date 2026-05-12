@@ -47,6 +47,7 @@ export function discover(hass: HomeAssistant, deviceId: string): DeviceEntities 
   const chargerKw = pickNumber(attrs.charger_kw);
   const socEntity = pickString(attrs.soc_entity);
   const targetSocEntity = pickString(attrs.target_soc_entity);
+  const minSocThreshold = pickNumber(attrs.min_soc_threshold);
 
   return {
     ...partial,
@@ -54,6 +55,7 @@ export function discover(hass: HomeAssistant, deviceId: string): DeviceEntities 
     ...(chargerKw !== undefined ? { chargerKw } : {}),
     ...(socEntity ? { socEntity } : {}),
     ...(targetSocEntity ? { targetSocEntity } : {}),
+    ...(minSocThreshold !== undefined ? { minSocThreshold } : {}),
   } as DeviceEntities;
 }
 
