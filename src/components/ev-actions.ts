@@ -2,6 +2,7 @@ import { LitElement, css, html, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { cssVar } from "../lib/theme.js";
 import "./ev-deadline-picker.js";
+import "./ev-confirm-dialog.js";
 import type { DeviceEntities, HomeAssistant } from "../types.js";
 
 @customElement("ev-actions")
@@ -12,6 +13,7 @@ export class EvActions extends LitElement {
 
   @state() private _deadlineOpen = false;
   @state() private _clearing = false;
+  @state() private _confirmOpen = false;
 
   static override styles = css`
     :host { display: block; }
@@ -117,11 +119,29 @@ export class EvActions extends LitElement {
         @deadline-confirm=${this._onDeadlineConfirm}
         @deadline-cancel=${() => (this._deadlineOpen = false)}
       ></ev-deadline-picker>
+      <ev-confirm-dialog
+        .open=${this._confirmOpen}
+        title="Force charge now?"
+        body="Ignores the price plan and charges until target SoC or unplug."
+        confirmLabel="Charge now"
+        tone="warning"
+        @confirm-accept=${this._onChargeConfirm}
+        @confirm-cancel=${this._onChargeCancel}
+      ></ev-confirm-dialog>
     `;
   }
 
   private _chargeNow = () => {
+    this._confirmOpen = true;
+  };
+
+  private _onChargeConfirm = () => {
+    this._confirmOpen = false;
     void this.hass.callService("smart_ev_charging", "force_charge_now", {}, this._target());
+  };
+
+  private _onChargeCancel = () => {
+    this._confirmOpen = false;
   };
   private _clearOverride = async () => {
     if (this._clearing) return;
