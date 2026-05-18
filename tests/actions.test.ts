@@ -115,3 +115,68 @@ describe("ev-actions clear-override loading state", () => {
     await pending;
   });
 });
+
+describe("ev-actions force-charge-now confirmation", () => {
+  function mountActionsPluggedIn() {
+    const hass = stubHass({
+      states: { "binary_sensor.daily_plugged_in": { state: "on" } },
+    });
+    const calls: Array<{ domain: string; service: string; data: unknown; target: unknown }> = [];
+    hass.callService = async (domain, service, data, target) => {
+      calls.push({ domain, service, data, target });
+    };
+    const ents = discover(hass, "test_dev");
+    const el = document.createElement("ev-actions") as EvActions;
+    el.hass = hass;
+    el.entities = ents;
+    document.body.appendChild(el);
+    return { el, calls };
+  }
+
+  it("does not call the service on first click; opens the confirm dialog", async () => {
+    const { el, calls } = mountActionsPluggedIn();
+    await el.updateComplete;
+
+    el.shadowRoot!.querySelector<HTMLButtonElement>("button.charge")!.click();
+    await el.updateComplete;
+
+    expect(calls).toEqual([]);
+    const dlg = el.shadowRoot!.querySelector("ev-confirm-dialog") as HTMLElement & { open: boolean };
+    expect(dlg).not.toBeNull();
+    expect(dlg.open).toBe(true);
+  });
+
+  it("calls force_charge_now exactly once after the user confirms", async () => {
+    const { el, calls } = mountActionsPluggedIn();
+    await el.updateComplete;
+
+    el.shadowRoot!.querySelector<HTMLButtonElement>("button.charge")!.click();
+    await el.updateComplete;
+
+    const dlg = el.shadowRoot!.querySelector("ev-confirm-dialog") as HTMLElement & { open: boolean };
+    dlg.dispatchEvent(new CustomEvent("confirm-accept", { bubbles: true, composed: true }));
+    await el.updateComplete;
+
+    expect(calls.length).toBe(1);
+    const call = calls[0]!;
+    expect(call.domain).toBe("smart_ev_charging");
+    expect(call.service).toBe("force_charge_now");
+    expect(call.target).toEqual({ entity_id: "sensor.daily_plan_status" });
+    expect(dlg.open).toBe(false);
+  });
+
+  it("does not call the service if the user cancels", async () => {
+    const { el, calls } = mountActionsPluggedIn();
+    await el.updateComplete;
+
+    el.shadowRoot!.querySelector<HTMLButtonElement>("button.charge")!.click();
+    await el.updateComplete;
+
+    const dlg = el.shadowRoot!.querySelector("ev-confirm-dialog") as HTMLElement & { open: boolean };
+    dlg.dispatchEvent(new CustomEvent("confirm-cancel", { bubbles: true, composed: true }));
+    await el.updateComplete;
+
+    expect(calls).toEqual([]);
+    expect(dlg.open).toBe(false);
+  });
+});
