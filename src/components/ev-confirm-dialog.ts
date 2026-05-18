@@ -112,6 +112,27 @@ export class EvConfirmDialog extends LitElement {
     this.open = false;
     this.dispatchEvent(new CustomEvent("confirm-accept", { bubbles: true, composed: true }));
   };
+
+  private _onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      this._cancel();
+    }
+  };
+
+  override updated(changed: Map<string, unknown>) {
+    if (!changed.has("open")) return;
+    if (this.open) {
+      document.addEventListener("keydown", this._onKeyDown);
+      this.shadowRoot?.querySelector<HTMLButtonElement>("button.primary")?.focus();
+    } else {
+      document.removeEventListener("keydown", this._onKeyDown);
+    }
+  }
+
+  override disconnectedCallback() {
+    document.removeEventListener("keydown", this._onKeyDown);
+    super.disconnectedCallback();
+  }
 }
 
 declare global {

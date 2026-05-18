@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import "../src/components/ev-confirm-dialog.js";
 import type { EvConfirmDialog } from "../src/components/ev-confirm-dialog.js";
 
@@ -8,6 +8,17 @@ function mount(props: Partial<EvConfirmDialog> = {}): EvConfirmDialog {
   document.body.appendChild(el);
   return el;
 }
+
+beforeEach(() => {
+  // happy-dom's ShadowRoot.activeElement getter walks getRootNode() across
+  // shadow boundaries and crashes when a previous test left focus on a
+  // button inside a now-detached/orphan shadow tree. Clear the DOM and any
+  // lingering focus between tests so each test starts isolated.
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+  document.body.innerHTML = "";
+});
 
 describe("ev-confirm-dialog rendering", () => {
   it("renders nothing when open is false", async () => {
@@ -101,5 +112,67 @@ describe("ev-confirm-dialog tone variants", () => {
     await el.updateComplete;
     const btn = el.shadowRoot!.querySelector<HTMLButtonElement>("button.primary")!;
     expect(btn.classList.contains("primary-tone")).toBe(true);
+  });
+});
+
+describe("ev-confirm-dialog keyboard a11y", () => {
+  it("focuses the primary button when open flips to true", async () => {
+    const el = mount({ open: false, title: "T", body: "B" });
+    await el.updateComplete;
+
+    el.open = true;
+    await el.updateComplete;
+    // updated() schedules focus; allow a microtask for it.
+    await Promise.resolve();
+
+    const btn = el.shadowRoot!.querySelector<HTMLButtonElement>("button.primary")!;
+    expect(el.shadowRoot!.activeElement).toBe(btn);
+  });
+
+  it("does not move focus while open stays false", async () => {
+    const el = mount({ open: false, title: "T", body: "B" });
+    await el.updateComplete;
+    expect(el.shadowRoot!.activeElement).toBeNull();
+  });
+
+  it("Escape key triggers confirm-cancel and closes", async () => {
+    const el = mount({ open: true, title: "T", body: "B" });
+    await el.updateComplete;
+    const cancels: Event[] = [];
+    el.addEventListener("confirm-cancel", (e) => cancels.push(e));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await el.updateComplete;
+
+    expect(cancels.length).toBe(1);
+    expect(el.open).toBe(false);
+  });
+
+  it("Escape key does nothing when dialog is closed", async () => {
+    const el = mount({ open: false, title: "T", body: "B" });
+    await el.updateComplete;
+    const cancels: Event[] = [];
+    el.addEventListener("confirm-cancel", (e) => cancels.push(e));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await el.updateComplete;
+
+    expect(cancels.length).toBe(0);
+  });
+
+  it("removes the Escape listener after closing to avoid leaks", async () => {
+    const el = mount({ open: true, title: "T", body: "B" });
+    await el.updateComplete;
+
+    // Cancel via primary first → open=false → listener should detach.
+    el.shadowRoot!.querySelector<HTMLButtonElement>("button.cancel")!.click();
+    await el.updateComplete;
+
+    const cancels: Event[] = [];
+    el.addEventListener("confirm-cancel", (e) => cancels.push(e));
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await el.updateComplete;
+
+    expect(cancels.length).toBe(0);
   });
 });
