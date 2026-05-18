@@ -164,7 +164,7 @@ describe("ev-confirm-dialog keyboard a11y", () => {
     const el = mount({ open: true, title: "T", body: "B" });
     await el.updateComplete;
 
-    // Cancel via primary first → open=false → listener should detach.
+    // Click cancel → open=false → listener should detach.
     el.shadowRoot!.querySelector<HTMLButtonElement>("button.cancel")!.click();
     await el.updateComplete;
 
