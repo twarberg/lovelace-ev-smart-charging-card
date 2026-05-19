@@ -100,8 +100,9 @@ export class EvTimeline extends LitElement {
           role="img"
           aria-labelledby="timeline-title"
           aria-describedby="timeline-desc"
-          @mousemove=${this._onMove(prices)}
-          @mouseleave=${this._onLeave}
+          @pointermove=${this._setTip(prices)}
+          @pointerdown=${this._setTip(prices)}
+          @pointerleave=${this._onLeave}
         >
           <polyline points="${linePts}" fill="none" stroke="${cssVar("primary", "#3b82f6")}" stroke-width="1.5" />
           ${nowX >= 0
@@ -109,7 +110,7 @@ export class EvTimeline extends LitElement {
             : ""}
         </svg>
         <span id="timeline-desc" class="sr-only">
-          24-hour electricity price curve. Hover or focus a bar to see the slot price.
+          24-hour electricity price curve. Hover, tap, or focus a bar to see the slot price.
         </span>
         <ev-hover-tooltip
           .visible=${this._tip.visible}
@@ -202,7 +203,17 @@ export class EvTimeline extends LitElement {
     }
   }
 
-  private _onMove = (prices: PricePoint[]) => (e: MouseEvent) => {
+  private _hideTimer: ReturnType<typeof setTimeout> | undefined;
+
+  private _clearHide() {
+    if (this._hideTimer !== undefined) {
+      clearTimeout(this._hideTimer);
+      this._hideTimer = undefined;
+    }
+  }
+
+  private _setTip = (prices: PricePoint[]) => (e: PointerEvent) => {
+    this._clearHide();
     const svg = e.currentTarget as SVGSVGElement;
     const rect = svg.getBoundingClientRect();
     const ratioX = (e.clientX - rect.left) / rect.width;
@@ -218,7 +229,22 @@ export class EvTimeline extends LitElement {
     };
   };
 
-  private _onLeave = () => { this._tip = { ...this._tip, visible: false }; };
+  private _onLeave = (e: PointerEvent) => {
+    if (e.pointerType === "touch") {
+      this._clearHide();
+      this._hideTimer = setTimeout(() => {
+        this._tip = { ...this._tip, visible: false };
+        this._hideTimer = undefined;
+      }, 2500);
+    } else {
+      this._tip = { ...this._tip, visible: false };
+    }
+  };
+
+  override disconnectedCallback() {
+    this._clearHide();
+    super.disconnectedCallback();
+  }
 
   private _prices(): PricePoint[] {
     if (!this.entities?.priceEntity) return [];
