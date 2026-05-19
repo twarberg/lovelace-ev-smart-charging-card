@@ -10,13 +10,6 @@ interface PricePoint {
   price: number;
 }
 
-export interface SlotClickDetail {
-  start: string;
-  end: string;
-  isPlanned: boolean;
-  price: number;
-}
-
 const W = 480;
 const H = 80;
 
@@ -31,8 +24,6 @@ export class EvTimeline extends LitElement {
     .tile { background: ${unsafeCSS(cssVar("cardBg", "#fff"))}; border-radius: 12px; padding: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); position: relative; }
     h3 { margin: 0 0 8px; font-size: 0.95em; color: ${unsafeCSS(cssVar("secondaryText", "#475569"))}; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
     svg { width: 100%; height: auto; display: block; }
-    .slot { cursor: pointer; }
-    .slot:hover rect { fill: ${unsafeCSS(cssVar("primary", "#3b82f6"))}; opacity: 0.15; }
     .planned-rect { fill: ${unsafeCSS(cssVar("success", "#22c55e"))}; opacity: 0.35; pointer-events: none; }
     .now-line { stroke: ${unsafeCSS(cssVar("primaryText", "#0f172a"))}; stroke-width: 1; stroke-dasharray: 2 2; }
     .empty { color: ${unsafeCSS(cssVar("secondaryText", "#94a3b8"))}; font-style: italic; }
@@ -109,8 +100,9 @@ export class EvTimeline extends LitElement {
           role="img"
           aria-labelledby="timeline-title"
           aria-describedby="timeline-desc"
-          @mousemove=${this._onMove(prices)}
-          @mouseleave=${this._onLeave}
+          @pointermove=${this._setTip(prices)}
+          @pointerdown=${this._setTip(prices)}
+          @pointerleave=${this._onLeave}
         >
           <polyline points="${linePts}" fill="none" stroke="${cssVar("primary", "#3b82f6")}" stroke-width="1.5" />
           ${nowX >= 0
@@ -118,7 +110,7 @@ export class EvTimeline extends LitElement {
             : ""}
         </svg>
         <span id="timeline-desc" class="sr-only">
-          24-hour electricity price curve. Hover or focus a bar to see the slot price.
+          24-hour electricity price curve. Hover, tap, or focus a bar to see the slot price.
         </span>
         <ev-hover-tooltip
           .visible=${this._tip.visible}
@@ -148,7 +140,6 @@ export class EvTimeline extends LitElement {
       const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
       g.setAttribute("class", "slot-group");
 
-      // Clickable transparent overlay rect
       const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       rect.setAttribute("class", "slot");
       rect.setAttribute("x", String(i * slotW));
@@ -159,7 +150,6 @@ export class EvTimeline extends LitElement {
       rect.setAttribute("stroke", cssVar("divider", "#e5e7eb"));
       rect.setAttribute("stroke-width", "0.25");
       rect.setAttribute("data-slot-hour", String(i));
-      rect.addEventListener("click", () => this._emitSlot(p, isPlanned));
 
       const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
       title.textContent = `${new Date(p.start).toLocaleString()} · ${p.price.toFixed(2)}`;
@@ -213,7 +203,17 @@ export class EvTimeline extends LitElement {
     }
   }
 
-  private _onMove = (prices: PricePoint[]) => (e: MouseEvent) => {
+  private _hideTimer: ReturnType<typeof setTimeout> | undefined;
+
+  private _clearHide() {
+    if (this._hideTimer !== undefined) {
+      clearTimeout(this._hideTimer);
+      this._hideTimer = undefined;
+    }
+  }
+
+  private _setTip = (prices: PricePoint[]) => (e: PointerEvent) => {
+    this._clearHide();
     const svg = e.currentTarget as SVGSVGElement;
     const rect = svg.getBoundingClientRect();
     const ratioX = (e.clientX - rect.left) / rect.width;
@@ -229,12 +229,22 @@ export class EvTimeline extends LitElement {
     };
   };
 
-  private _onLeave = () => { this._tip = { ...this._tip, visible: false }; };
-
-  private _emitSlot = (p: PricePoint, isPlanned: boolean) => {
-    const detail: SlotClickDetail = { start: p.start, end: p.end, isPlanned, price: p.price };
-    this.dispatchEvent(new CustomEvent("slot-click", { detail, bubbles: true, composed: true }));
+  private _onLeave = (e: PointerEvent) => {
+    if (e.pointerType === "touch") {
+      this._clearHide();
+      this._hideTimer = setTimeout(() => {
+        this._tip = { ...this._tip, visible: false };
+        this._hideTimer = undefined;
+      }, 2500);
+    } else {
+      this._tip = { ...this._tip, visible: false };
+    }
   };
+
+  override disconnectedCallback() {
+    this._clearHide();
+    super.disconnectedCallback();
+  }
 
   private _prices(): PricePoint[] {
     if (!this.entities?.priceEntity) return [];

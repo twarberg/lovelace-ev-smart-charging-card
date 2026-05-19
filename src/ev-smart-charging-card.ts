@@ -98,8 +98,7 @@ export class EvSmartChargingCard extends LitElement {
 ></ev-status>` : ""}
           ${show.has("timeline") ? html`<ev-timeline class="span2"
             .hass=${this.hass} .entities=${this._entities}
-            .hours=${this._config.timeline_hours ?? 36}
-            @slot-click=${this._onSlotClick}></ev-timeline>` : ""}
+            .hours=${this._config.timeline_hours ?? 36}></ev-timeline>` : ""}
           ${show.has("window") ? html`<ev-window .hass=${this.hass} .entities=${this._entities}></ev-window>` : ""}
           ${show.has("history") ? html`<ev-history .hass=${this.hass} .entities=${this._entities}
             .days=${this._config.history_days ?? 30}></ev-history>` : ""}
@@ -121,15 +120,6 @@ export class EvSmartChargingCard extends LitElement {
     );
   }
 
-  private _onSlotClick = (e: CustomEvent<{ start: string; end: string; isPlanned: boolean }>) => {
-    if (!this._entities) return;
-    const target = { entity_id: this._entities.planStatus };
-    if (e.detail.isPlanned) {
-      void this.hass.callService("smart_ev_charging", "skip_until", { until: e.detail.end }, target);
-    } else {
-      void this.hass.callService("smart_ev_charging", "force_charge_now", { duration: { hours: 1 } }, target);
-    }
-  };
 }
 
 (window as unknown as { customCards?: unknown[] }).customCards ||= [];
