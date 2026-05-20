@@ -1,7 +1,7 @@
 import { LitElement, css, html, svg, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import "./hover-tooltip.js";
-import { attachCost, detectSessions, fetchHistory, rollupByDay } from "../lib/history.js";
+import { attachCost, detectSessions, fetchHistory, fillDayRange, rollupByDay } from "../lib/history.js";
 import type { DayBucket, PricePoint } from "../lib/history.js";
 import { formatCurrency } from "../lib/format.js";
 import { cssVar } from "../lib/theme.js";
@@ -60,13 +60,13 @@ export class EvHistory extends LitElement {
     const buckets = this._buckets ?? [];
     const total = buckets.reduce((a, b) => a + b.cost, 0);
     const sessionCount = buckets.reduce((a, b) => a + b.sessions.length, 0);
-    const maxCost = Math.max(0, ...buckets.map((b) => b.cost));
+    const maxKwh = Math.max(0, ...buckets.map((b) => b.kwh));
 
     const body = this._error
       ? html`<div class="empty">${this._error}</div>`
       : this._loading && !this._buckets
         ? html`<div class="empty">Loading…</div>`
-        : buckets.length === 0
+        : sessionCount === 0
           ? html`<div class="empty">No charging sessions in the last ${this.days} days</div>`
           : html`
             <svg
@@ -78,7 +78,7 @@ export class EvHistory extends LitElement {
               @mouseleave=${this._onLeave}
             >
               ${buckets.map((b, i) => {
-                const h = maxCost > 0 ? (b.cost / maxCost) * 76 : 0;
+                const h = maxKwh > 0 ? (b.kwh / maxKwh) * 76 : 0;
                 return svg`<rect class="bar" x="${i * 8}" y="${80 - h}" width="7" height="${h}"
                   fill="${cssVar("primary", "#3b82f6")}"
                   @click=${() => (this._expanded = this._expanded === b.date ? null : b.date)}>
@@ -159,7 +159,8 @@ export class EvHistory extends LitElement {
         ? ((this.hass.states[this.entities.priceEntity]?.attributes.prices as PricePoint[] | undefined) ?? [])
         : [];
       const kw = this.entities.chargerKw ?? 11.0;
-      this._buckets = rollupByDay(attachCost(sessions, pricesAttr, kw));
+      const withCost = attachCost(sessions, pricesAttr, kw).filter((s) => (s.kwh ?? 0) > 0);
+      this._buckets = fillDayRange(rollupByDay(withCost), start, end);
     } catch (e) {
       this._error = `History fetch failed: ${(e as Error).message}`;
     } finally {

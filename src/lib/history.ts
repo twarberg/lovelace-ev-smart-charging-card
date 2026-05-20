@@ -16,6 +16,7 @@ export interface Session {
 export interface DayBucket {
   date: string;
   cost: number;
+  kwh: number;
   sessions: Session[];
 }
 
@@ -78,12 +79,25 @@ export function rollupByDay(sessions: Session[]): DayBucket[] {
   const map = new Map<string, DayBucket>();
   for (const s of sessions) {
     const date = new Date(s.start).toISOString().slice(0, 10);
-    const bucket = map.get(date) ?? { date, cost: 0, sessions: [] };
+    const bucket = map.get(date) ?? { date, cost: 0, kwh: 0, sessions: [] };
     bucket.cost += s.cost ?? 0;
+    bucket.kwh += s.kwh ?? 0;
     bucket.sessions.push(s);
     map.set(date, bucket);
   }
   return [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function fillDayRange(buckets: DayBucket[], start: Date, end: Date): DayBucket[] {
+  const byDate = new Map(buckets.map((b) => [b.date, b]));
+  const out: DayBucket[] = [];
+  const startUtc = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+  const endUtc = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
+  for (let t = startUtc; t <= endUtc; t += 86_400_000) {
+    const date = new Date(t).toISOString().slice(0, 10);
+    out.push(byDate.get(date) ?? { date, cost: 0, kwh: 0, sessions: [] });
+  }
+  return out;
 }
 
 export async function fetchHistory(
