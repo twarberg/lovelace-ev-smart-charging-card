@@ -71,6 +71,7 @@ export class EvHistory extends LitElement {
           : html`
             <svg
               viewBox="0 0 ${buckets.length * 8} 80"
+              preserveAspectRatio="none"
               role="img"
               aria-labelledby="history-title"
               aria-describedby="history-desc"
@@ -123,7 +124,7 @@ export class EvHistory extends LitElement {
   private _onMove = (buckets: DayBucket[], unit: string | null, language: string) => (e: MouseEvent) => {
     const svgEl = e.currentTarget as SVGSVGElement;
     const svgRect = svgEl.getBoundingClientRect();
-    const idx = Math.min(buckets.length - 1, Math.max(0, Math.floor((e.clientX - svgRect.left) / 8)));
+    const idx = Math.min(buckets.length - 1, Math.max(0, Math.floor(((e.clientX - svgRect.left) / svgRect.width) * buckets.length)));
     const b = buckets[idx];
     if (!b) return;
     const text = `${b.date} · Total ${formatCurrency(b.cost, unit, language)} · ${b.sessions.length} sessions`;
