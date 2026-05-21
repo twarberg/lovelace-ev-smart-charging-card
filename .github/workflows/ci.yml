@@ -7,18 +7,26 @@ on:
 
 jobs:
   lint-test-build:
+    name: Lint, test, build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm test -- --coverage
-      - run: npm run build
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Type-check
+        run: npm run typecheck
+      - name: Test
+        run: npm test -- --coverage
+      - name: Build
+        run: npm run build
       - name: Check bundle size budget
         run: |
           size=$(stat -c%s dist/ev-smart-charging-card.js)
@@ -29,10 +37,13 @@ jobs:
           fi
 
   hacs:
+    name: HACS validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: hacs/action@main
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Validate HACS manifest
+        uses: hacs/action@main
         with:
           category: plugin
           ignore: images
