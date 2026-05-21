@@ -10,15 +10,20 @@
   "actions": {
     "replan": "Genplanlæg",
     "force": "Tving opladning",
+    "stop_force": "Stop tvungen opladning",
     "skip": "Spring 1t over",
     "set_deadline": "Sæt afgangstid",
-    "clear_override": "Ryd override"
+    "clear_override": "Ryd override",
+    "resume": "Genoptag"
   },
   "labels": {
     "smart_on": "Smart: TIL",
     "smart_off": "Smart: FRA",
     "deadline": "Frist",
     "one_off_active": "engangs-override aktiv",
+    "force_charging": "Tvungen opladning",
+    "cancelled_banner": "Opladning annulleret — slukket manuelt",
+    "default_departure": "Standard afgang",
     "no_charging_planned": "Ingen opladning planlagt",
     "no_price_data": "Ingen prisdata endnu",
     "no_soc_entity": "Ingen SoC-entitet konfigureret",

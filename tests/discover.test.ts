@@ -56,4 +56,27 @@ describe("discover", () => {
     const hass = stubHass({ deviceId: "other" });
     expect(() => discover(hass, "test_dev")).toThrow(/no entities/i);
   });
+
+  it("picks up time.departure_fallback when registered", () => {
+    const hass = stubHass({
+      extraEntries: [{
+        entity_id: "time.daily_departure_fallback",
+        device_id: "test_dev",
+        config_entry_id: "entry_x",
+        translation_key: "departure_fallback",
+        platform: "smart_ev_charging",
+        unique_id: "entry_x_departure_fallback",
+        original_name: null,
+      }],
+      states: { "time.daily_departure_fallback": { state: "07:30:00" } },
+    });
+    const d = discover(hass, "test_dev");
+    expect(d.departureFallback).toBe("time.daily_departure_fallback");
+  });
+
+  it("leaves departureFallback undefined when not registered", () => {
+    const hass = stubHass();
+    const d = discover(hass, "test_dev");
+    expect(d.departureFallback).toBeUndefined();
+  });
 });

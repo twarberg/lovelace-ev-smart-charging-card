@@ -10,6 +10,7 @@ const KEY_TO_FIELD: Record<string, keyof DeviceEntities> = {
   actively_charging: "activelyCharging",
   charge_now: "chargeNow",
   smart_charging_enabled: "smartCharging",
+  departure_fallback: "departureFallback",
 };
 
 export function discover(hass: HomeAssistant, deviceId: string): DeviceEntities {

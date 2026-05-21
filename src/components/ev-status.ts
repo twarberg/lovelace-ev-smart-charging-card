@@ -6,6 +6,7 @@ import type { DeviceEntities, HomeAssistant } from "../types.js";
 interface StatusStyle {
   bg: string;
   fg: string;
+  icon?: string;
 }
 
 function statusStyleFor(status: string): StatusStyle {
@@ -15,9 +16,23 @@ function statusStyleFor(status: string): StatusStyle {
     case "partial":
     case "extended":
       return { bg: "rgba(245,158,11,0.22)", fg: cssVar("warning", "#d97706") };
+    case "cancelled":
+      return { bg: "rgba(239,68,68,0.18)", fg: cssVar("error", "#ef4444"), icon: "mdi:hand-back-left" };
     default:
       return { bg: "rgba(148,163,184,0.22)", fg: cssVar("secondaryText", "#475569") };
   }
+}
+
+function formatCountdown(iso: string): string | null {
+  const target = Date.parse(iso);
+  if (!Number.isFinite(target)) return null;
+  const ms = target - Date.now();
+  if (ms <= 0) return null;
+  const totalMin = Math.round(ms / 60000);
+  if (totalMin < 60) return `${totalMin}m`;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
 @customElement("ev-status")
@@ -91,6 +106,10 @@ export class EvStatus extends LitElement {
       color: ${unsafeCSS(cssVar("primary", "#3b82f6"))};
       font-size: 0.78em;
     }
+    .badge-force {
+      background: rgba(245,158,11,0.20);
+      color: ${unsafeCSS(cssVar("warning", "#d97706"))};
+    }
     .soc {
       display: flex;
       flex-direction: column;
@@ -152,6 +171,16 @@ export class EvStatus extends LitElement {
     const status = planStatus?.state ?? "no_data";
     const style = statusStyleFor(status);
     const oneOff = (departure?.attributes.source ?? "default") === "one_off";
+    const overrideMode = (planStatus?.attributes.override_mode ?? null) as
+      | "force"
+      | "skip"
+      | null;
+    const overrideUntil =
+      typeof planStatus?.attributes.override_until === "string"
+        ? (planStatus.attributes.override_until as string)
+        : null;
+    const forceActive = overrideMode === "force";
+    const forceCountdown = forceActive && overrideUntil ? formatCountdown(overrideUntil) : null;
 
     const soc = this.entities.socEntity ? Number(this.hass.states[this.entities.socEntity]?.state) : NaN;
     const target = this.entities.targetSocEntity ? Number(this.hass.states[this.entities.targetSocEntity]?.state) : NaN;
@@ -179,7 +208,10 @@ export class EvStatus extends LitElement {
               <ha-icon icon="mdi:refresh"></ha-icon>
             </button>
             <span class="pill" style="background:${style.bg}; color:${style.fg};" aria-label="Plan status: ${status}">
-              <span class="pill-dot" aria-hidden="true"></span>${status}
+              ${style.icon
+                ? html`<ha-icon icon=${style.icon} style="--mdc-icon-size:14px;"></ha-icon>`
+                : html`<span class="pill-dot" aria-hidden="true"></span>`}
+              ${status}
             </span>
             <ha-switch
               .checked=${smart?.state === "on"}
@@ -194,12 +226,17 @@ export class EvStatus extends LitElement {
             <ha-icon icon="mdi:flag-checkered" style="--mdc-icon-size:16px;vertical-align:-3px;"></ha-icon>
             Deadline ${departure?.state ?? "—"}
           </span>
-          ${oneOff
-            ? html`<span class="badge">
-                <ha-icon icon="mdi:star" style="--mdc-icon-size:14px;vertical-align:-2px;"></ha-icon>
-                one-off
+          ${forceActive
+            ? html`<span class="badge badge-force" aria-label="Force-charging">
+                <ha-icon icon="mdi:flash" style="--mdc-icon-size:14px;vertical-align:-2px;"></ha-icon>
+                Force-charging${forceCountdown ? html` · ${forceCountdown}` : ""}
               </span>`
-            : ""}
+            : oneOff
+              ? html`<span class="badge">
+                  <ha-icon icon="mdi:star" style="--mdc-icon-size:14px;vertical-align:-2px;"></ha-icon>
+                  one-off
+                </span>`
+              : ""}
         </div>
 
         ${hasSoC
