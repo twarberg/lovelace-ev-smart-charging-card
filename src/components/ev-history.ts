@@ -3,7 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import "./hover-tooltip.js";
 import { attachCost, detectSessions, fetchHistory, fillDayRange, rollupByDay } from "../lib/history.js";
 import type { DayBucket, PricePoint } from "../lib/history.js";
-import { formatCurrency } from "../lib/format.js";
+import { formatCurrency, formatTimeRange } from "../lib/format.js";
 import { cssVar } from "../lib/theme.js";
 import type { DeviceEntities, HomeAssistant } from "../types.js";
 
@@ -102,7 +102,7 @@ export class EvHistory extends LitElement {
                     ${buckets
                       .find((b) => b.date === this._expanded)
                       ?.sessions.map(
-                        (s) => html`<li>${new Date(s.start).toLocaleTimeString()}–${new Date(s.end).toLocaleTimeString()} · ${(s.kwh ?? 0).toFixed(1)} kWh · ${formatCurrency(s.cost ?? null, unit, language)}</li>`,
+                        (s) => html`<li>${formatTimeRange(s.start, s.end, this.hass.locale)} · ${(s.kwh ?? 0).toFixed(1)} kWh · ${formatCurrency(s.cost ?? null, unit, language)}</li>`,
                       )}
                   </ul>
                 </div>`

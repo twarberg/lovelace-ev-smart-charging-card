@@ -52,7 +52,7 @@ export class EvWindow extends LitElement {
               cumulative += price * slotKwh;
               return html`
                 <tr>
-                  <td>${formatHourMinute(h)}</td>
+                  <td>${formatHourMinute(h, this.hass.locale)}</td>
                   <td>${price.toFixed(2)}</td>
                   <td>${formatKwh(slotKwh)}</td>
                   <td>${formatCurrency(cumulative, unit, language)}</td>

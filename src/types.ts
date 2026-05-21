@@ -29,8 +29,11 @@ export interface HassConnection {
   ): Promise<() => Promise<void>>;
 }
 
+export type HassTimeFormat = "language" | "system" | "am_pm" | "24";
+
 export interface HassLocale {
   language: string;
+  time_format?: HassTimeFormat;
 }
 
 export interface HomeAssistant {
