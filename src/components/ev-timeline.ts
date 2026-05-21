@@ -1,5 +1,6 @@
 import { LitElement, css, html, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { formatDateTime, formatHourMinute } from "../lib/format.js";
 import { cssVar } from "../lib/theme.js";
 import type { DeviceEntities, HomeAssistant } from "../types.js";
 import "./hover-tooltip.js";
@@ -152,7 +153,7 @@ export class EvTimeline extends LitElement {
       rect.setAttribute("data-slot-hour", String(i));
 
       const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-      title.textContent = `${new Date(p.start).toLocaleString()} · ${p.price.toFixed(2)}`;
+      title.textContent = `${formatDateTime(p.start, this.hass.locale)} · ${p.price.toFixed(2)}`;
       rect.appendChild(title);
       g.appendChild(rect);
 
@@ -197,7 +198,7 @@ export class EvTimeline extends LitElement {
         label.setAttribute("x", (x + 3).toFixed(1));
         label.setAttribute("y", "11");
         label.setAttribute("class", "date-label");
-        label.textContent = cur.toLocaleDateString([], { weekday: "short", day: "2-digit" });
+        label.textContent = cur.toLocaleDateString(this.hass.locale.language, { weekday: "short", day: "2-digit" });
         svgEl.appendChild(label);
       }
     }
@@ -220,7 +221,7 @@ export class EvTimeline extends LitElement {
     const idx = Math.min(prices.length - 1, Math.max(0, Math.floor(ratioX * prices.length)));
     const p = prices[idx];
     if (!p) return;
-    const text = `${new Date(p.start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · ${p.price.toFixed(2)}`;
+    const text = `${formatHourMinute(p.start, this.hass.locale)} · ${p.price.toFixed(2)}`;
     this._tip = {
       visible: true,
       x: e.clientX,

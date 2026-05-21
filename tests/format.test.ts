@@ -14,9 +14,17 @@ describe("formatCurrency", () => {
 });
 
 describe("formatHourMinute", () => {
-  it("local-time HH:mm from ISO", () => {
+  it("local-time HH:mm from ISO with 24h pref", () => {
     const iso = new Date(Date.UTC(2026, 4, 11, 2, 0)).toISOString();
-    expect(formatHourMinute(iso)).toMatch(/^\d{2}:\d{2}$/);
+    expect(formatHourMinute(iso, { language: "en", time_format: "24" })).toMatch(/^\d{2}:\d{2}$/);
+  });
+  it("am/pm output when pref is am_pm", () => {
+    const iso = new Date(2026, 4, 11, 14, 0).toISOString();
+    expect(formatHourMinute(iso, { language: "en", time_format: "am_pm" })).toMatch(/AM|PM/i);
+  });
+  it("danish locale yields 24h without am/pm even when pref is language", () => {
+    const iso = new Date(2026, 4, 11, 14, 0).toISOString();
+    expect(formatHourMinute(iso, { language: "da", time_format: "language" })).not.toMatch(/AM|PM/i);
   });
 });
 
