@@ -14,6 +14,7 @@ export class EvActions extends LitElement {
   @state() private _deadlineOpen = false;
   @state() private _clearing = false;
   @state() private _confirmOpen = false;
+  @state() private _resuming = false;
 
   static override styles = css`
     :host { display: block; }
@@ -26,6 +27,37 @@ export class EvActions extends LitElement {
       gap: 8px;
       flex-wrap: wrap;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+    .banner {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(239,68,68,0.12);
+      color: ${unsafeCSS(cssVar("error", "#ef4444"))};
+      font-size: 0.9em;
+      margin-bottom: 4px;
+    }
+    .banner ha-icon { --mdc-icon-size: 20px; flex: 0 0 auto; }
+    .banner .banner-text { flex: 1 1 auto; min-width: 0; color: ${unsafeCSS(cssVar("primaryText", "#0f172a"))}; }
+    .fallback {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 4px 0;
+      font-size: 0.86em;
+      color: ${unsafeCSS(cssVar("secondaryText", "#475569"))};
+    }
+    .fallback input[type=time] {
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid ${unsafeCSS(cssVar("divider", "#e5e7eb"))};
+      background: ${unsafeCSS(cssVar("cardBg", "#fff"))};
+      color: ${unsafeCSS(cssVar("primaryText", "#0f172a"))};
+      font-size: 0.95em;
     }
     button {
       flex: 1 1 auto;
@@ -52,6 +84,8 @@ export class EvActions extends LitElement {
     button.charge { background: rgba(245,158,11,0.18); color: ${unsafeCSS(cssVar("warning", "#d97706"))}; }
     button.set    { background: rgba(34,197,94,0.18); color: ${unsafeCSS(cssVar("success", "#16a34a"))}; }
     button.clear  { background: rgba(239,68,68,0.15); color: ${unsafeCSS(cssVar("error", "#ef4444"))}; }
+    button.resume { background: rgba(59,130,246,0.18); color: ${unsafeCSS(cssVar("primary", "#3b82f6"))}; }
+    button.stop-force { background: rgba(239,68,68,0.15); color: ${unsafeCSS(cssVar("error", "#ef4444"))}; }
     button:disabled {
       cursor: not-allowed;
       opacity: 0.6;
@@ -77,20 +111,61 @@ export class EvActions extends LitElement {
     const overrideActive =
       (this.hass.states[this.entities.effectiveDeparture]?.attributes.source ?? "default") === "one_off";
     const unplugged = this.hass.states[this.entities.pluggedIn]?.state === "off";
+    const planStatus = this.hass.states[this.entities.planStatus];
+    const status = planStatus?.state ?? "no_data";
+    const overrideMode = (planStatus?.attributes.override_mode ?? null) as
+      | "force"
+      | "skip"
+      | null;
+    const cancelled = status === "cancelled";
+    const forceActive = overrideMode === "force";
+    const fallback = this.entities.departureFallback
+      ? this.hass.states[this.entities.departureFallback]
+      : undefined;
 
     return html`
       <div class="tile">
-        <button
-          class="charge"
-          title="${unplugged
-            ? "Car is unplugged — plug in to force charge."
-            : "Charge immediately, ignoring the price plan, until target SoC or unplug."}"
-          aria-label="Charge now"
-          ?disabled=${unplugged}
-          @click=${this._chargeNow}
-        >
-          <ha-icon icon="mdi:flash"></ha-icon> Charge now
-        </button>
+        ${cancelled
+          ? html`<div class="banner" role="status">
+              <ha-icon icon="mdi:hand-back-left"></ha-icon>
+              <span class="banner-text">Charging cancelled — flipped off manually. Resume to re-enable smart charging.</span>
+            </div>`
+          : ""}
+        ${cancelled
+          ? html`<button
+              class="resume ${this._resuming ? "spinning" : ""}"
+              title="Clear cancel override and resume smart charging."
+              aria-label="Resume plan"
+              aria-busy=${this._resuming ? "true" : "false"}
+              ?disabled=${this._resuming}
+              @click=${this._resumePlan}
+            >
+              <ha-icon icon="${this._resuming ? "mdi:loading" : "mdi:play-circle-outline"}"></ha-icon>
+              ${this._resuming ? "Resuming…" : "Resume"}
+            </button>`
+          : forceActive
+            ? html`<button
+                class="stop-force ${this._resuming ? "spinning" : ""}"
+                title="Stop force charging and return to the smart plan."
+                aria-label="Stop force charge"
+                aria-busy=${this._resuming ? "true" : "false"}
+                ?disabled=${this._resuming}
+                @click=${this._resumePlan}
+              >
+                <ha-icon icon="${this._resuming ? "mdi:loading" : "mdi:stop-circle-outline"}"></ha-icon>
+                ${this._resuming ? "Stopping…" : "Stop force charge"}
+              </button>`
+            : html`<button
+                class="charge"
+                title="${unplugged
+                  ? "Car is unplugged — plug in to force charge."
+                  : "Charge immediately, ignoring the price plan, until target SoC or unplug."}"
+                aria-label="Charge now"
+                ?disabled=${unplugged}
+                @click=${this._chargeNow}
+              >
+                <ha-icon icon="mdi:flash"></ha-icon> Charge now
+              </button>`}
         <button
           class="set"
           title="One-time override of the departure deadline for the next charge cycle only. Reverts after the deadline passes."
@@ -111,6 +186,18 @@ export class EvActions extends LitElement {
               <ha-icon icon="${this._clearing ? "mdi:loading" : "mdi:close-circle-outline"}"></ha-icon>
               ${this._clearing ? "Clearing…" : "Clear"}
             </button>`
+          : ""}
+        ${fallback
+          ? html`<label class="fallback">
+              <ha-icon icon="mdi:calendar-clock" style="--mdc-icon-size:16px;"></ha-icon>
+              Default departure
+              <input
+                type="time"
+                .value=${this._fallbackValue(fallback.state)}
+                aria-label="Default departure time"
+                @change=${this._onFallbackChange}
+              />
+            </label>`
           : ""}
       </div>
       <ev-deadline-picker
@@ -143,6 +230,33 @@ export class EvActions extends LitElement {
   private _onChargeCancel = () => {
     this._confirmOpen = false;
   };
+  private _resumePlan = async () => {
+    if (this._resuming) return;
+    this._resuming = true;
+    try {
+      await this.hass.callService("smart_ev_charging", "resume_plan", {}, this._target());
+    } finally {
+      setTimeout(() => { this._resuming = false; }, 400);
+    }
+  };
+
+  private _fallbackValue(state: string): string {
+    if (!state || state === "unknown" || state === "unavailable") return "06:00";
+    const m = /^(\d{2}):(\d{2})/.exec(state);
+    return m ? `${m[1]}:${m[2]}` : "06:00";
+  }
+
+  private _onFallbackChange = (e: Event) => {
+    const v = (e.target as HTMLInputElement).value;
+    if (!v || !this.entities.departureFallback) return;
+    void this.hass.callService(
+      "time",
+      "set_value",
+      { time: v.length === 5 ? `${v}:00` : v },
+      { entity_id: this.entities.departureFallback },
+    );
+  };
+
   private _clearOverride = async () => {
     if (this._clearing) return;
     this._clearing = true;

@@ -75,4 +75,16 @@ export interface DeviceEntities {
   priceEntity?: string;
   chargerKw?: number;
   minSocThreshold?: number;
+  departureFallback?: string;
 }
+
+export type PlanStatusState =
+  | "ok"
+  | "partial"
+  | "extended"
+  | "no_data"
+  | "unplugged"
+  | "disabled"
+  | "cancelled";
+
+export type OverrideMode = "force" | "skip" | null;

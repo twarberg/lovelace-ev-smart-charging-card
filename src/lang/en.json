@@ -10,15 +10,20 @@
   "actions": {
     "replan": "Replan",
     "force": "Force charge",
+    "stop_force": "Stop force charge",
     "skip": "Skip 1h",
     "set_deadline": "Set deadline",
-    "clear_override": "Clear override"
+    "clear_override": "Clear override",
+    "resume": "Resume"
   },
   "labels": {
     "smart_on": "Smart: ON",
     "smart_off": "Smart: OFF",
     "deadline": "Deadline",
     "one_off_active": "one-off override active",
+    "force_charging": "Force-charging",
+    "cancelled_banner": "Charging cancelled — flipped off manually",
+    "default_departure": "Default departure",
     "no_charging_planned": "No charging planned",
     "no_price_data": "No price data yet",
     "no_soc_entity": "No SoC entity configured",

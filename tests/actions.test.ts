@@ -116,6 +116,151 @@ describe("ev-actions clear-override loading state", () => {
   });
 });
 
+describe("ev-actions cancelled / resume", () => {
+  function mountCancelled() {
+    const hass = stubHass({
+      states: {
+        "binary_sensor.daily_plugged_in": { state: "on" },
+        "sensor.daily_plan_status": {
+          state: "cancelled",
+          attributes: { override_mode: "skip", override_until: null },
+        },
+      },
+    });
+    const calls: Array<{ domain: string; service: string; data: unknown; target: unknown }> = [];
+    hass.callService = async (domain, service, data, target) => {
+      calls.push({ domain, service, data, target });
+    };
+    const ents = discover(hass, "test_dev");
+    const el = document.createElement("ev-actions") as EvActions;
+    el.hass = hass;
+    el.entities = ents;
+    document.body.appendChild(el);
+    return { el, calls };
+  }
+
+  it("renders the cancel banner and a Resume button when status is cancelled", async () => {
+    const { el } = mountCancelled();
+    await el.updateComplete;
+    const banner = el.shadowRoot!.querySelector(".banner");
+    expect(banner).not.toBeNull();
+    expect(banner!.textContent).toMatch(/cancelled/i);
+    const resumeBtn = el.shadowRoot!.querySelector<HTMLButtonElement>("button.resume");
+    expect(resumeBtn).not.toBeNull();
+  });
+
+  it("does not render the Charge now button when status is cancelled", async () => {
+    const { el } = mountCancelled();
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector("button.charge")).toBeNull();
+  });
+
+  it("calls smart_ev_charging.resume_plan when Resume is clicked", async () => {
+    const { el, calls } = mountCancelled();
+    await el.updateComplete;
+    el.shadowRoot!.querySelector<HTMLButtonElement>("button.resume")!.click();
+    await el.updateComplete;
+    expect(calls.length).toBe(1);
+    expect(calls[0]!.domain).toBe("smart_ev_charging");
+    expect(calls[0]!.service).toBe("resume_plan");
+    expect(calls[0]!.target).toEqual({ entity_id: "sensor.daily_plan_status" });
+  });
+});
+
+describe("ev-actions force-charging stop", () => {
+  function mountForce() {
+    const hass = stubHass({
+      states: {
+        "binary_sensor.daily_plugged_in": { state: "on" },
+        "binary_sensor.daily_charge_now": { state: "on" },
+        "sensor.daily_plan_status": {
+          state: "ok",
+          attributes: { override_mode: "force", override_until: null },
+        },
+      },
+    });
+    const calls: Array<{ domain: string; service: string; data: unknown; target: unknown }> = [];
+    hass.callService = async (domain, service, data, target) => {
+      calls.push({ domain, service, data, target });
+    };
+    const ents = discover(hass, "test_dev");
+    const el = document.createElement("ev-actions") as EvActions;
+    el.hass = hass;
+    el.entities = ents;
+    document.body.appendChild(el);
+    return { el, calls };
+  }
+
+  it("swaps Charge now for Stop force charge when force override is active", async () => {
+    const { el } = mountForce();
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector("button.charge")).toBeNull();
+    const stopBtn = el.shadowRoot!.querySelector<HTMLButtonElement>("button.stop-force");
+    expect(stopBtn).not.toBeNull();
+  });
+
+  it("calls resume_plan when Stop force charge is clicked", async () => {
+    const { el, calls } = mountForce();
+    await el.updateComplete;
+    el.shadowRoot!.querySelector<HTMLButtonElement>("button.stop-force")!.click();
+    await el.updateComplete;
+    expect(calls.length).toBe(1);
+    expect(calls[0]!.service).toBe("resume_plan");
+  });
+});
+
+describe("ev-actions departure fallback time picker", () => {
+  function mountWithFallback() {
+    const hass = stubHass({
+      extraEntries: [{
+        entity_id: "time.daily_departure_fallback",
+        device_id: "test_dev",
+        config_entry_id: "entry_x",
+        translation_key: "departure_fallback",
+        platform: "smart_ev_charging",
+        unique_id: "entry_x_departure_fallback",
+        original_name: null,
+      }],
+      states: {
+        "binary_sensor.daily_plugged_in": { state: "on" },
+        "time.daily_departure_fallback": { state: "07:30:00" },
+      },
+    });
+    const calls: Array<{ domain: string; service: string; data: unknown; target: unknown }> = [];
+    hass.callService = async (domain, service, data, target) => {
+      calls.push({ domain, service, data, target });
+    };
+    const ents = discover(hass, "test_dev");
+    const el = document.createElement("ev-actions") as EvActions;
+    el.hass = hass;
+    el.entities = ents;
+    document.body.appendChild(el);
+    return { el, calls };
+  }
+
+  it("renders an inline time input pre-filled with the fallback value", async () => {
+    const { el } = mountWithFallback();
+    await el.updateComplete;
+    const input = el.shadowRoot!.querySelector<HTMLInputElement>(".fallback input[type=time]");
+    expect(input).not.toBeNull();
+    expect(input!.value).toBe("07:30");
+  });
+
+  it("calls time.set_value when the input changes", async () => {
+    const { el, calls } = mountWithFallback();
+    await el.updateComplete;
+    const input = el.shadowRoot!.querySelector<HTMLInputElement>(".fallback input[type=time]")!;
+    input.value = "08:15";
+    input.dispatchEvent(new Event("change"));
+    await el.updateComplete;
+    expect(calls.length).toBe(1);
+    expect(calls[0]!.domain).toBe("time");
+    expect(calls[0]!.service).toBe("set_value");
+    expect(calls[0]!.data).toEqual({ time: "08:15:00" });
+    expect(calls[0]!.target).toEqual({ entity_id: "time.daily_departure_fallback" });
+  });
+});
+
 describe("ev-actions force-charge-now confirmation", () => {
   function mountActionsPluggedIn() {
     const hass = stubHass({

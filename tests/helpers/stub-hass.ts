@@ -4,6 +4,7 @@ export interface StubOpts {
   deviceId?: string;
   entries?: Partial<Record<string, Partial<HassEntityRegistryEntry>>>;
   states?: Partial<Record<string, Partial<HassEntity>>>;
+  extraEntries?: HassEntityRegistryEntry[];
 }
 
 const DEFAULT_DEVICE = "test_dev";
@@ -68,6 +69,9 @@ export function stubHass(opts: StubOpts = {}): HomeAssistant {
         min_soc_gate_active: false,
       },
     };
+  }
+  for (const entry of opts.extraEntries ?? []) {
+    entries[entry.entity_id] = entry;
   }
   // Merge in any extra states (e.g. sensor.test_prices) that aren't in the KEYS list
   for (const [entityId, partial] of Object.entries(opts.states ?? {})) {
