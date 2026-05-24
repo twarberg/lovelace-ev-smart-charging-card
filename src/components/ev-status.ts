@@ -147,6 +147,32 @@ export class EvStatus extends LitElement {
       border-radius: 999px;
       background: linear-gradient(90deg, ${unsafeCSS(cssVar("primary", "#3b82f6"))}, ${unsafeCSS(cssVar("success", "#22c55e"))});
       transition: width .35s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .soc-fill.charging::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        115deg,
+        transparent 0%,
+        rgba(255,255,255,0.0) 30%,
+        rgba(255,255,255,0.55) 50%,
+        rgba(255,255,255,0.0) 70%,
+        transparent 100%
+      );
+      background-size: 200% 100%;
+      pointer-events: none;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .soc-fill.charging::before {
+        animation: socShimmer 1.8s linear infinite;
+      }
+    }
+    @keyframes socShimmer {
+      from { background-position: 200% 0; }
+      to { background-position: -100% 0; }
     }
     .soc-target {
       position: absolute;
@@ -278,7 +304,7 @@ export class EvStatus extends LitElement {
                   aria-valuemax="100"
                   aria-label="State of charge"
                 >
-                  <div class="soc-fill" style="width:${Math.max(0, Math.min(100, soc))}%"></div>
+                  <div class="soc-fill ${chargingNow ? "charging" : ""}" style="width:${Math.max(0, Math.min(100, soc))}%"></div>
                   ${Number.isFinite(target)
                     ? html`<div class="soc-target" style="left:${Math.max(0, Math.min(100, target))}%"></div>`
                     : ""}
