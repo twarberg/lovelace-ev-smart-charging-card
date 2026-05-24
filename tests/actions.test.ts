@@ -411,9 +411,9 @@ describe("ev-actions stop-charge (plan-driven)", () => {
     el.shadowRoot!.querySelector<HTMLButtonElement>("button.stop")!.click();
     await el.updateComplete;
     expect(calls).toHaveLength(1);
-    expect(calls[0].domain).toBe("switch");
-    expect(calls[0].service).toBe("turn_off");
-    expect(calls[0].target).toEqual({ entity_id: "switch.daily_smart_charging_enabled" });
+    expect(calls[0]!.domain).toBe("switch");
+    expect(calls[0]!.service).toBe("turn_off");
+    expect(calls[0]!.target).toEqual({ entity_id: "switch.daily_smart_charging_enabled" });
   });
 
   it("prefers Stop force charge over Stop charge when force override is active", async () => {
