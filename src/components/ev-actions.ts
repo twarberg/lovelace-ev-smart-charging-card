@@ -274,7 +274,7 @@ export class EvActions extends LitElement {
       await this.hass.callService(
         "switch",
         "turn_off",
-        undefined,
+        {},
         { entity_id: this.entities.smartCharging },
       );
     } finally {
