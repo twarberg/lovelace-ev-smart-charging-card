@@ -14,7 +14,8 @@
     "skip": "Spring 1t over",
     "set_deadline": "Sæt afgangstid",
     "clear_override": "Ryd override",
-    "resume": "Genoptag"
+    "resume": "Genoptag",
+    "stop_charge": "Stop opladning"
   },
   "labels": {
     "smart_on": "Smart: TIL",
@@ -23,6 +24,8 @@
     "one_off_active": "engangs-override aktiv",
     "force_charging": "Tvungen opladning",
     "cancelled_banner": "Opladning annulleret — slukket manuelt",
+    "charging_now": "Oplader nu",
+    "charging_now_banner": "Oplader nu",
     "default_departure": "Standard afgang",
     "no_charging_planned": "Ingen opladning planlagt",
     "no_price_data": "Ingen prisdata endnu",
