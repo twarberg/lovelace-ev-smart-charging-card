@@ -86,6 +86,19 @@ export class EvStatus extends LitElement {
       text-transform: capitalize;
     }
     .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .pill-charging {
+      background: rgba(34,197,94,0.22);
+      color: ${unsafeCSS(cssVar("success", "#16a34a"))};
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .pill-dot.pulse {
+        animation: chargingPulse 1.2s ease-in-out infinite;
+      }
+    }
+    @keyframes chargingPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.6); opacity: 0.55; }
+    }
     .controls {
       display: flex;
       align-items: center;
@@ -134,6 +147,32 @@ export class EvStatus extends LitElement {
       border-radius: 999px;
       background: linear-gradient(90deg, ${unsafeCSS(cssVar("primary", "#3b82f6"))}, ${unsafeCSS(cssVar("success", "#22c55e"))});
       transition: width .35s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .soc-fill.charging::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        115deg,
+        transparent 0%,
+        rgba(255,255,255,0.0) 30%,
+        rgba(255,255,255,0.55) 50%,
+        rgba(255,255,255,0.0) 70%,
+        transparent 100%
+      );
+      background-size: 200% 100%;
+      pointer-events: none;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .soc-fill.charging::before {
+        animation: socShimmer 1.8s linear infinite;
+      }
+    }
+    @keyframes socShimmer {
+      from { background-position: 200% 0; }
+      to { background-position: -100% 0; }
     }
     .soc-target {
       position: absolute;
@@ -181,6 +220,8 @@ export class EvStatus extends LitElement {
         : null;
     const forceActive = overrideMode === "force";
     const forceCountdown = forceActive && overrideUntil ? formatCountdown(overrideUntil) : null;
+    const chargingNow =
+      this.hass.states[this.entities.activelyCharging]?.state === "on";
 
     const soc = this.entities.socEntity ? Number(this.hass.states[this.entities.socEntity]?.state) : NaN;
     const target = this.entities.targetSocEntity ? Number(this.hass.states[this.entities.targetSocEntity]?.state) : NaN;
@@ -207,6 +248,15 @@ export class EvStatus extends LitElement {
             >
               <ha-icon icon="mdi:refresh"></ha-icon>
             </button>
+            ${chargingNow
+              ? html`<span
+                  class="pill pill-charging"
+                  aria-label="Charging now"
+                >
+                  <span class="pill-dot pulse" aria-hidden="true"></span>
+                  Charging now
+                </span>`
+              : ""}
             <span class="pill" style="background:${style.bg}; color:${style.fg};" aria-label="Plan status: ${status}">
               ${style.icon
                 ? html`<ha-icon icon=${style.icon} style="--mdc-icon-size:14px;"></ha-icon>`
@@ -254,7 +304,7 @@ export class EvStatus extends LitElement {
                   aria-valuemax="100"
                   aria-label="State of charge"
                 >
-                  <div class="soc-fill" style="width:${Math.max(0, Math.min(100, soc))}%"></div>
+                  <div class="soc-fill ${chargingNow ? "charging" : ""}" style="width:${Math.max(0, Math.min(100, soc))}%"></div>
                   ${Number.isFinite(target)
                     ? html`<div class="soc-target" style="left:${Math.max(0, Math.min(100, target))}%"></div>`
                     : ""}
