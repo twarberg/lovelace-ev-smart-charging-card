@@ -42,6 +42,11 @@ export class EvActions extends LitElement {
     }
     .banner ha-icon { --mdc-icon-size: 20px; flex: 0 0 auto; }
     .banner .banner-text { flex: 1 1 auto; min-width: 0; color: ${unsafeCSS(cssVar("primaryText", "#0f172a"))}; }
+    .banner-charging {
+      background: rgba(34,197,94,0.15);
+      color: ${unsafeCSS(cssVar("success", "#16a34a"))};
+    }
+    .banner-charging .banner-text { color: ${unsafeCSS(cssVar("primaryText", "#0f172a"))}; }
     .fallback {
       width: 100%;
       display: flex;
@@ -119,6 +124,8 @@ export class EvActions extends LitElement {
       | null;
     const cancelled = status === "cancelled";
     const forceActive = overrideMode === "force";
+    const chargingNow =
+      this.hass.states[this.entities.activelyCharging]?.state === "on";
     const fallback = this.entities.departureFallback
       ? this.hass.states[this.entities.departureFallback]
       : undefined;
@@ -129,6 +136,12 @@ export class EvActions extends LitElement {
           ? html`<div class="banner" role="status">
               <ha-icon icon="mdi:hand-back-left"></ha-icon>
               <span class="banner-text">Charging cancelled — flipped off manually. Resume to re-enable smart charging.</span>
+            </div>`
+          : ""}
+        ${chargingNow && !cancelled
+          ? html`<div class="banner banner-charging" role="status">
+              <ha-icon icon="mdi:flash"></ha-icon>
+              <span class="banner-text">Charging now</span>
             </div>`
           : ""}
         ${cancelled

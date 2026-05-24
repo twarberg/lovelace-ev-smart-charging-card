@@ -325,3 +325,46 @@ describe("ev-actions force-charge-now confirmation", () => {
     expect(dlg.open).toBe(false);
   });
 });
+
+describe("ev-actions charging-now banner", () => {
+  function mount(activelyCharging: "on" | "off", planStatus = "ok"): EvActions {
+    const hass = stubHass({
+      states: {
+        "binary_sensor.daily_actively_charging": { state: activelyCharging },
+        "binary_sensor.daily_plugged_in": { state: "on" },
+        "sensor.daily_plan_status": {
+          state: planStatus,
+          attributes: { override_mode: null, override_until: null },
+        },
+      },
+    });
+    const ents = discover(hass, "test_dev");
+    const el = document.createElement("ev-actions") as EvActions;
+    el.hass = hass;
+    el.entities = ents;
+    document.body.appendChild(el);
+    return el;
+  }
+
+  it("renders the charging-now banner when actively charging", async () => {
+    const el = mount("on");
+    await el.updateComplete;
+    const banner = el.shadowRoot!.querySelector(".banner-charging");
+    expect(banner).not.toBeNull();
+    expect(banner!.textContent).toMatch(/charging now/i);
+  });
+
+  it("hides the charging-now banner when not charging", async () => {
+    const el = mount("off");
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector(".banner-charging")).toBeNull();
+  });
+
+  it("hides the charging-now banner when status is cancelled", async () => {
+    const el = mount("on", "cancelled");
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector(".banner-charging")).toBeNull();
+    const cancelledBanner = el.shadowRoot!.querySelector(".banner");
+    expect(cancelledBanner!.textContent).toMatch(/cancelled/i);
+  });
+});
