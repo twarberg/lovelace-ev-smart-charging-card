@@ -15,6 +15,7 @@ export class EvActions extends LitElement {
   @state() private _clearing = false;
   @state() private _confirmOpen = false;
   @state() private _resuming = false;
+  @state() private _stopping = false;
 
   static override styles = css`
     :host { display: block; }
@@ -91,6 +92,7 @@ export class EvActions extends LitElement {
     button.clear  { background: rgba(239,68,68,0.15); color: ${unsafeCSS(cssVar("error", "#ef4444"))}; }
     button.resume { background: rgba(59,130,246,0.18); color: ${unsafeCSS(cssVar("primary", "#3b82f6"))}; }
     button.stop-force { background: rgba(239,68,68,0.15); color: ${unsafeCSS(cssVar("error", "#ef4444"))}; }
+    button.stop { background: rgba(239,68,68,0.15); color: ${unsafeCSS(cssVar("error", "#ef4444"))}; }
     button:disabled {
       cursor: not-allowed;
       opacity: 0.6;
@@ -168,17 +170,29 @@ export class EvActions extends LitElement {
                 <ha-icon icon="${this._resuming ? "mdi:loading" : "mdi:stop-circle-outline"}"></ha-icon>
                 ${this._resuming ? "Stopping…" : "Stop force charge"}
               </button>`
-            : html`<button
-                class="charge"
-                title="${unplugged
-                  ? "Car is unplugged — plug in to force charge."
-                  : "Charge immediately, ignoring the price plan, until target SoC or unplug."}"
-                aria-label="Charge now"
-                ?disabled=${unplugged}
-                @click=${this._chargeNow}
-              >
-                <ha-icon icon="mdi:flash"></ha-icon> Charge now
-              </button>`}
+            : chargingNow
+              ? html`<button
+                  class="stop ${this._stopping ? "spinning" : ""}"
+                  title="Stop the current charge by turning smart charging off."
+                  aria-label="Stop charge"
+                  aria-busy=${this._stopping ? "true" : "false"}
+                  ?disabled=${this._stopping}
+                  @click=${this._stopCharge}
+                >
+                  <ha-icon icon="${this._stopping ? "mdi:loading" : "mdi:stop-circle-outline"}"></ha-icon>
+                  ${this._stopping ? "Stopping…" : "Stop charge"}
+                </button>`
+              : html`<button
+                  class="charge"
+                  title="${unplugged
+                    ? "Car is unplugged — plug in to force charge."
+                    : "Charge immediately, ignoring the price plan, until target SoC or unplug."}"
+                  aria-label="Charge now"
+                  ?disabled=${unplugged}
+                  @click=${this._chargeNow}
+                >
+                  <ha-icon icon="mdi:flash"></ha-icon> Charge now
+                </button>`}
         <button
           class="set"
           title="One-time override of the departure deadline for the next charge cycle only. Reverts after the deadline passes."
@@ -250,6 +264,21 @@ export class EvActions extends LitElement {
       await this.hass.callService("smart_ev_charging", "resume_plan", {}, this._target());
     } finally {
       setTimeout(() => { this._resuming = false; }, 400);
+    }
+  };
+
+  private _stopCharge = async () => {
+    if (this._stopping) return;
+    this._stopping = true;
+    try {
+      await this.hass.callService(
+        "switch",
+        "turn_off",
+        undefined,
+        { entity_id: this.entities.smartCharging },
+      );
+    } finally {
+      setTimeout(() => { this._stopping = false; }, 400);
     }
   };
 

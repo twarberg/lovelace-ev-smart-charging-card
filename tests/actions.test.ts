@@ -368,3 +368,72 @@ describe("ev-actions charging-now banner", () => {
     expect(cancelledBanner!.textContent).toMatch(/cancelled/i);
   });
 });
+
+describe("ev-actions stop-charge (plan-driven)", () => {
+  function mount(opts: { actively: "on" | "off"; force?: boolean; cancelled?: boolean }) {
+    const overrideMode = opts.force ? "force" : null;
+    const planStatus = opts.cancelled ? "cancelled" : "ok";
+    const hass = stubHass({
+      states: {
+        "binary_sensor.daily_actively_charging": { state: opts.actively },
+        "binary_sensor.daily_plugged_in": { state: "on" },
+        "sensor.daily_plan_status": {
+          state: planStatus,
+          attributes: { override_mode: overrideMode, override_until: null },
+        },
+      },
+    });
+    const calls: Array<{ domain: string; service: string; data: unknown; target: unknown }> = [];
+    hass.callService = async (domain, service, data, target) => {
+      calls.push({ domain, service, data, target });
+    };
+    const ents = discover(hass, "test_dev");
+    const el = document.createElement("ev-actions") as EvActions;
+    el.hass = hass;
+    el.entities = ents;
+    document.body.appendChild(el);
+    return { el, calls };
+  }
+
+  it("shows Stop charge when actively charging from the plan (no force)", async () => {
+    const { el } = mount({ actively: "on" });
+    await el.updateComplete;
+    const stopBtn = el.shadowRoot!.querySelector<HTMLButtonElement>("button.stop");
+    expect(stopBtn).not.toBeNull();
+    expect(stopBtn!.textContent!.trim()).toMatch(/stop charge/i);
+    expect(el.shadowRoot!.querySelector("button.charge")).toBeNull();
+    expect(el.shadowRoot!.querySelector("button.stop-force")).toBeNull();
+  });
+
+  it("calls switch.turn_off on the smart-charging entity when clicked", async () => {
+    const { el, calls } = mount({ actively: "on" });
+    await el.updateComplete;
+    el.shadowRoot!.querySelector<HTMLButtonElement>("button.stop")!.click();
+    await el.updateComplete;
+    expect(calls).toHaveLength(1);
+    expect(calls[0].domain).toBe("switch");
+    expect(calls[0].service).toBe("turn_off");
+    expect(calls[0].target).toEqual({ entity_id: "switch.daily_smart_charging_enabled" });
+  });
+
+  it("prefers Stop force charge over Stop charge when force override is active", async () => {
+    const { el } = mount({ actively: "on", force: true });
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector("button.stop-force")).not.toBeNull();
+    expect(el.shadowRoot!.querySelector("button.stop")).toBeNull();
+  });
+
+  it("does not render Stop charge when status is cancelled (Resume wins)", async () => {
+    const { el } = mount({ actively: "on", cancelled: true });
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector("button.stop")).toBeNull();
+    expect(el.shadowRoot!.querySelector("button.resume")).not.toBeNull();
+  });
+
+  it("falls back to Charge now when not actively charging", async () => {
+    const { el } = mount({ actively: "off" });
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector("button.charge")).not.toBeNull();
+    expect(el.shadowRoot!.querySelector("button.stop")).toBeNull();
+  });
+});
