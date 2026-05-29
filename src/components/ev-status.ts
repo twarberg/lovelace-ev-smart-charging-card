@@ -153,16 +153,16 @@ export class EvStatus extends LitElement {
     .soc-fill.charging::before {
       content: "";
       position: absolute;
-      inset: 0;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 40%;
       background: linear-gradient(
         115deg,
-        transparent 0%,
-        rgba(255,255,255,0.0) 30%,
-        rgba(255,255,255,0.55) 50%,
-        rgba(255,255,255,0.0) 70%,
-        transparent 100%
+        transparent,
+        rgba(255,255,255,0.55),
+        transparent
       );
-      background-size: 200% 100%;
       pointer-events: none;
     }
     @media (prefers-reduced-motion: no-preference) {
@@ -171,8 +171,8 @@ export class EvStatus extends LitElement {
       }
     }
     @keyframes socShimmer {
-      from { background-position: 200% 0; }
-      to { background-position: -100% 0; }
+      from { transform: translateX(-100%); }
+      to { transform: translateX(250%); }
     }
     .soc-target {
       position: absolute;
