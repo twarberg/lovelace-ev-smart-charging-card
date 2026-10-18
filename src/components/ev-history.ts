@@ -3,9 +3,13 @@ import { customElement, property, state } from "lit/decorators.js";
 import "./hover-tooltip.js";
 import { attachCost, detectSessions, fetchHistory, fillDayRange, mergePrices, pickChargingSeries, pricesFromStateHistory, rollupByDay } from "../lib/history.js";
 import type { DayBucket, PricePoint } from "../lib/history.js";
-import { formatCurrency, formatTimeRange } from "../lib/format.js";
+import { formatCurrency, formatKwh, formatTimeRange } from "../lib/format.js";
 import { cssVar } from "../lib/theme.js";
 import type { DeviceEntities, HomeAssistant } from "../types.js";
+
+export function bucketTooltip(b: DayBucket, unit: string | null, language: string): string {
+  return `${b.date} · Total ${formatCurrency(b.cost, unit, language)} · ${formatKwh(b.kwh)} · ${b.sessions.length} sessions`;
+}
 
 @customElement("ev-history")
 export class EvHistory extends LitElement {
@@ -56,7 +60,7 @@ export class EvHistory extends LitElement {
 
   override render() {
     const language = this.hass.locale.language;
-    const unit = (this.hass.states[this.entities.planStatus]?.attributes.cost_unit as string | null) ?? null;
+    const unit = (this.hass.states[this.entities.plannedHours]?.attributes.cost_unit as string | null) ?? null;
     const buckets = this._buckets ?? [];
     const total = buckets.reduce((a, b) => a + b.cost, 0);
     const sessionCount = buckets.reduce((a, b) => a + b.sessions.length, 0);
@@ -102,7 +106,7 @@ export class EvHistory extends LitElement {
                     ${buckets
                       .find((b) => b.date === this._expanded)
                       ?.sessions.map(
-                        (s) => html`<li>${formatTimeRange(s.start, s.end, this.hass.locale)} · ${(s.kwh ?? 0).toFixed(1)} kWh · ${formatCurrency(s.cost ?? null, unit, language)}</li>`,
+                        (s) => html`<li>${formatTimeRange(s.start, s.end, this.hass.locale)} · ${formatKwh(s.kwh ?? 0)} · ${formatCurrency(s.cost ?? null, unit, language)}</li>`,
                       )}
                   </ul>
                 </div>`
@@ -127,7 +131,7 @@ export class EvHistory extends LitElement {
     const idx = Math.min(buckets.length - 1, Math.max(0, Math.floor(((e.clientX - svgRect.left) / svgRect.width) * buckets.length)));
     const b = buckets[idx];
     if (!b) return;
-    const text = `${b.date} · Total ${formatCurrency(b.cost, unit, language)} · ${b.sessions.length} sessions`;
+    const text = bucketTooltip(b, unit, language);
     this._tip = {
       visible: true,
       x: e.clientX,
