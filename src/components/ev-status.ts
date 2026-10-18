@@ -23,6 +23,14 @@ function statusStyleFor(status: string): StatusStyle {
   }
 }
 
+// Grace period after a charge slot starts before we flag that the car is not
+// drawing power — chargers and cars take a moment to negotiate.
+const CHARGE_START_GRACE_MS = 3 * 60 * 1000;
+
+function isUnavailable(state: string | undefined): boolean {
+  return state === undefined || state === "unavailable" || state === "unknown";
+}
+
 function formatCountdown(iso: string): string | null {
   const target = Date.parse(iso);
   if (!Number.isFinite(target)) return null;
@@ -197,6 +205,42 @@ export class EvStatus extends LitElement {
     .replan-btn:focus-visible { outline: 2px solid ${unsafeCSS(cssVar("primary", "#3b82f6"))}; outline-offset: 2px; }
     .replan-btn:disabled { cursor: progress; opacity: 0.7; }
     .replan-btn.spinning ha-icon { animation: spin 0.9s linear infinite; }
+    .conn {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .conn-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.78em;
+      background: rgba(148,163,184,0.18);
+      color: ${unsafeCSS(cssVar("secondaryText", "#475569"))};
+      --mdc-icon-size: 14px;
+    }
+    .conn-chip.ok {
+      background: rgba(34,197,94,0.16);
+      color: ${unsafeCSS(cssVar("success", "#16a34a"))};
+    }
+    .conn-chip.bad {
+      background: rgba(239,68,68,0.14);
+      color: ${unsafeCSS(cssVar("error", "#ef4444"))};
+    }
+    .conn-warning {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(245,158,11,0.16);
+      color: ${unsafeCSS(cssVar("warning", "#d97706"))};
+      font-size: 0.86em;
+      --mdc-icon-size: 18px;
+    }
+    .conn-warning span { color: ${unsafeCSS(cssVar("primaryText", "#0f172a"))}; }
     @keyframes spin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
@@ -222,6 +266,21 @@ export class EvStatus extends LitElement {
     const forceCountdown = forceActive && overrideUntil ? formatCountdown(overrideUntil) : null;
     const chargingNow =
       this.hass.states[this.entities.activelyCharging]?.state === "on";
+
+    const pluggedState = this.hass.states[this.entities.pluggedIn]?.state;
+    const plugged = pluggedState === "on";
+    const chargerState = this.entities.chargerEntity
+      ? this.hass.states[this.entities.chargerEntity]?.state
+      : undefined;
+    const chargerOffline = this.entities.chargerEntity ? isUnavailable(chargerState) : false;
+    const chargeNow = this.hass.states[this.entities.chargeNow];
+    const slotSince = chargeNow ? Date.parse(chargeNow.last_changed) : NaN;
+    const stalled =
+      chargeNow?.state === "on" &&
+      plugged &&
+      !chargingNow &&
+      Number.isFinite(slotSince) &&
+      Date.now() - slotSince > CHARGE_START_GRACE_MS;
 
     const soc = this.entities.socEntity ? Number(this.hass.states[this.entities.socEntity]?.state) : NaN;
     const target = this.entities.targetSocEntity ? Number(this.hass.states[this.entities.targetSocEntity]?.state) : NaN;
@@ -288,6 +347,33 @@ export class EvStatus extends LitElement {
                 </span>`
               : ""}
         </div>
+
+        <div class="conn">
+          <span
+            class="conn-chip conn-plug ${plugged ? "ok" : ""}"
+            aria-label="Plug: ${plugged ? "plugged in" : "unplugged"}"
+          >
+            <ha-icon icon=${plugged ? "mdi:power-plug" : "mdi:power-plug-off"}></ha-icon>
+            ${plugged ? "Plugged in" : isUnavailable(pluggedState) ? "Plug unknown" : "Unplugged"}
+          </span>
+          ${this.entities.chargerEntity
+            ? html`<span
+                class="conn-chip conn-charger ${chargerOffline ? "bad" : "ok"}"
+                title=${this.entities.chargerEntity}
+                aria-label="Charger: ${chargerOffline ? "offline" : "online"}"
+              >
+                <ha-icon icon=${chargerOffline ? "mdi:lan-disconnect" : "mdi:ev-station"}></ha-icon>
+                ${chargerOffline ? "Charger offline" : "Charger online"}
+              </span>`
+            : ""}
+        </div>
+
+        ${stalled
+          ? html`<div class="conn-warning" role="status">
+              <ha-icon icon="mdi:alert"></ha-icon>
+              <span>Charge slot active but car is not charging — check the charger connection.</span>
+            </div>`
+          : ""}
 
         ${hasSoC
           ? html`

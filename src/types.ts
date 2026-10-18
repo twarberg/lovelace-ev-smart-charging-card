@@ -73,6 +73,7 @@ export interface DeviceEntities {
   socEntity?: string;
   targetSocEntity?: string;
   priceEntity?: string;
+  chargerEntity?: string;
   chargerKw?: number;
   minSocThreshold?: number;
   departureFallback?: string;

@@ -52,6 +52,18 @@ describe("discover", () => {
     expect(d.minSocThreshold).toBeUndefined();
   });
 
+  it("reads charger_switch_entity from plan_status attributes", () => {
+    const hass = stubHass({
+      states: {
+        "sensor.daily_plan_status": {
+          attributes: { charger_switch_entity: "switch.wallbox" },
+        },
+      },
+    });
+    const d = discover(hass, "test_dev");
+    expect(d.chargerEntity).toBe("switch.wallbox");
+  });
+
   it("throws when device has no integration entities", () => {
     const hass = stubHass({ deviceId: "other" });
     expect(() => discover(hass, "test_dev")).toThrow(/no entities/i);
