@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attachCost, detectSessions, mergePrices, pricesFromStateHistory, rollupByDay } from "../src/lib/history.js";
+import { attachCost, detectSessions, mergePrices, pickChargingSeries, pricesFromStateHistory, rollupByDay } from "../src/lib/history.js";
 
 describe("detectSessions", () => {
   it("groups contiguous on-runs of charge_now into sessions", () => {
@@ -92,5 +92,30 @@ describe("mergePrices", () => {
   it("returns history alone when there is no forecast", () => {
     const history = [{ start: "2026-04-20T00:00:00.000Z", end: "2026-04-20T01:00:00.000Z", price: 2 }];
     expect(mergePrices([], history)).toEqual(history);
+  });
+});
+
+describe("pickChargingSeries", () => {
+  const planned = [
+    { state: "on", t: "2026-05-01T00:00:00.000Z" },
+    { state: "off", t: "2026-05-01T02:00:00.000Z" },
+  ];
+
+  it("uses actual charging when it was ever on, ignoring planned-but-idle slots", () => {
+    const actual = [
+      { state: "off", t: "2026-05-01T00:00:00.000Z" },
+      { state: "on", t: "2026-05-03T00:00:00.000Z" },
+      { state: "off", t: "2026-05-03T01:00:00.000Z" },
+    ];
+    expect(pickChargingSeries(actual, planned)).toBe(actual);
+  });
+
+  it("falls back to planned slots when actual charging is never reported", () => {
+    const actual = [{ state: "off", t: "2026-05-01T00:00:00.000Z" }];
+    expect(pickChargingSeries(actual, planned)).toBe(planned);
+  });
+
+  it("falls back to planned slots when actual charging history is missing", () => {
+    expect(pickChargingSeries(undefined, planned)).toBe(planned);
   });
 });

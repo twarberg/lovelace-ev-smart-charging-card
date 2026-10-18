@@ -44,6 +44,17 @@ export function detectSessions(series: StateSample[], seriesEnd?: string): Sessi
   return out;
 }
 
+// Sessions should reflect energy actually delivered, so prefer the
+// actively_charging series. charge_now is only the plan's intent and stays on
+// even when the charger is offline. actively_charging is never on when the
+// integration has no charging-status entity, so fall back to the plan then.
+export function pickChargingSeries(
+  actual: StateSample[] | undefined,
+  planned: StateSample[],
+): StateSample[] {
+  return actual?.some((s) => s.state === "on") ? actual : planned;
+}
+
 function makeSession(start: string, end: string): Session {
   const ms = new Date(end).getTime() - new Date(start).getTime();
   const durationHours = Math.max(0, ms / 3_600_000);

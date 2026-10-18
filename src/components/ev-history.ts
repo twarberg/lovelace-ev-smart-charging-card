@@ -1,7 +1,7 @@
 import { LitElement, css, html, svg, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import "./hover-tooltip.js";
-import { attachCost, detectSessions, fetchHistory, fillDayRange, mergePrices, pricesFromStateHistory, rollupByDay } from "../lib/history.js";
+import { attachCost, detectSessions, fetchHistory, fillDayRange, mergePrices, pickChargingSeries, pricesFromStateHistory, rollupByDay } from "../lib/history.js";
 import type { DayBucket, PricePoint } from "../lib/history.js";
 import { formatCurrency, formatTimeRange } from "../lib/format.js";
 import { cssVar } from "../lib/theme.js";
@@ -144,7 +144,7 @@ export class EvHistory extends LitElement {
     try {
       const end = new Date();
       const start = new Date(end.getTime() - this.days * 86_400_000);
-      const ids: string[] = [this.entities.chargeNow];
+      const ids: string[] = [this.entities.chargeNow, this.entities.activelyCharging];
       if (this.entities.priceEntity) ids.push(this.entities.priceEntity);
       const history = await fetchHistory(this.hass, ids, start, end);
       if (typeof console !== "undefined") {
@@ -154,7 +154,10 @@ export class EvHistory extends LitElement {
           samples: history[this.entities.chargeNow]?.length ?? 0,
         });
       }
-      const chargeSeries = history[this.entities.chargeNow] ?? [];
+      const chargeSeries = pickChargingSeries(
+        history[this.entities.activelyCharging],
+        history[this.entities.chargeNow] ?? [],
+      );
       const sessions = detectSessions(chargeSeries, end.toISOString());
       const pricesAttr = this.entities.priceEntity
         ? ((this.hass.states[this.entities.priceEntity]?.attributes.prices as PricePoint[] | undefined) ?? [])
