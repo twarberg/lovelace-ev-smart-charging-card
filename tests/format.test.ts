@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { formatCurrency, formatHourMinute, formatKwh, stripPerKwh } from "../src/lib/format.js";
+import { formatCurrency, formatHourMinute, formatKwh, formatPricePerKwh, resolveCostUnit, stripPerKwh } from "../src/lib/format.js";
+import { discover } from "../src/lib/discover.js";
+import { stubHass } from "./helpers/stub-hass.js";
 
 describe("formatCurrency", () => {
   it("formats DKK with two decimals", () => {
@@ -45,5 +47,50 @@ describe("stripPerKwh", () => {
     [undefined, null],
   ])("strips %s -> %s", (input, expected) => {
     expect(stripPerKwh(input as string | null | undefined)).toBe(expected);
+  });
+});
+
+describe("resolveCostUnit", () => {
+  const ents = (hass: ReturnType<typeof stubHass>) => discover(hass, "test_dev");
+
+  it("prefers cost_unit from planned_hours", () => {
+    const hass = stubHass({
+      states: {
+        "sensor.daily_planned_hours": { attributes: { cost_unit: "DKK" } },
+        "sensor.test_prices": { attributes: { currency: "EUR" } },
+      },
+    });
+    expect(resolveCostUnit(hass, ents(hass))).toBe("DKK");
+  });
+
+  it("falls back to the price entity's currency attribute", () => {
+    const hass = stubHass({
+      states: {
+        "sensor.daily_planned_hours": { attributes: { cost_unit: null } },
+        "sensor.test_prices": { attributes: { currency: "DKK", unit_of_measurement: "kr/kWh" } },
+      },
+    });
+    expect(resolveCostUnit(hass, ents(hass))).toBe("DKK");
+  });
+
+  it("falls back to the price entity's unit_of_measurement without /kWh", () => {
+    const hass = stubHass({
+      states: { "sensor.test_prices": { attributes: { unit_of_measurement: "DKK/kWh" } } },
+    });
+    expect(resolveCostUnit(hass, ents(hass))).toBe("DKK");
+  });
+
+  it("returns null when nothing provides a unit", () => {
+    const hass = stubHass({ states: { "sensor.test_prices": { attributes: {} } } });
+    expect(resolveCostUnit(hass, ents(hass))).toBeNull();
+  });
+});
+
+describe("formatPricePerKwh", () => {
+  it("appends currency per kWh", () => {
+    expect(formatPricePerKwh(2.154, "DKK")).toBe("2.15 DKK/kWh");
+  });
+  it("shows bare number when unit is unknown", () => {
+    expect(formatPricePerKwh(2.154, null)).toBe("2.15");
   });
 });

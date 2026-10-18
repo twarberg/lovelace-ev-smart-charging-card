@@ -1,6 +1,6 @@
 import { LitElement, css, html, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { formatDateTime, formatHourMinute } from "../lib/format.js";
+import { formatDateTime, formatHourMinute, formatPricePerKwh, resolveCostUnit } from "../lib/format.js";
 import { cssVar } from "../lib/theme.js";
 import type { DeviceEntities, HomeAssistant } from "../types.js";
 import "./hover-tooltip.js";
@@ -153,7 +153,7 @@ export class EvTimeline extends LitElement {
       rect.setAttribute("data-slot-hour", String(i));
 
       const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-      title.textContent = `${formatDateTime(p.start, this.hass.locale)} · ${p.price.toFixed(2)}`;
+      title.textContent = `${formatDateTime(p.start, this.hass.locale)} · ${formatPricePerKwh(p.price, resolveCostUnit(this.hass, this.entities))}`;
       rect.appendChild(title);
       g.appendChild(rect);
 
@@ -221,7 +221,7 @@ export class EvTimeline extends LitElement {
     const idx = Math.min(prices.length - 1, Math.max(0, Math.floor(ratioX * prices.length)));
     const p = prices[idx];
     if (!p) return;
-    const text = `${formatHourMinute(p.start, this.hass.locale)} · ${p.price.toFixed(2)}`;
+    const text = `${formatHourMinute(p.start, this.hass.locale)} · ${formatPricePerKwh(p.price, resolveCostUnit(this.hass, this.entities))}`;
     this._tip = {
       visible: true,
       x: e.clientX,
