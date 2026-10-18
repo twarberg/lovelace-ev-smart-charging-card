@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectSessions, rollupByDay } from "../src/lib/history.js";
+import { attachCost, detectSessions, mergePrices, pricesFromStateHistory, rollupByDay } from "../src/lib/history.js";
 
 describe("detectSessions", () => {
   it("groups contiguous on-runs of charge_now into sessions", () => {
@@ -44,5 +44,53 @@ describe("rollupByDay", () => {
     ]);
     expect(buckets.find((b) => b.date === "2026-05-01")?.cost).toBeCloseTo(9.0 + 5.0, 5);
     expect(buckets.find((b) => b.date === "2026-05-02")?.cost).toBeCloseTo(4.5, 5);
+  });
+});
+
+describe("pricesFromStateHistory", () => {
+  it("turns numeric state samples into step price points", () => {
+    const pts = pricesFromStateHistory(
+      [
+        { state: "1.5", t: "2026-05-01T00:00:00.000Z" },
+        { state: "unavailable", t: "2026-05-01T01:00:00.000Z" },
+        { state: "2.0", t: "2026-05-01T02:00:00.000Z" },
+      ],
+      "2026-05-01T03:00:00.000Z",
+    );
+    expect(pts).toEqual([
+      { start: "2026-05-01T00:00:00.000Z", end: "2026-05-01T01:00:00.000Z", price: 1.5 },
+      { start: "2026-05-01T02:00:00.000Z", end: "2026-05-01T03:00:00.000Z", price: 2.0 },
+    ]);
+  });
+});
+
+describe("mergePrices", () => {
+  const forecast = [{ start: "2026-05-02T00:00:00.000Z", end: "2026-05-02T01:00:00.000Z", price: 3 }];
+
+  it("keeps history only before the forecast window", () => {
+    const history = [
+      { start: "2026-05-01T23:00:00.000Z", end: "2026-05-02T00:30:00.000Z", price: 1 },
+    ];
+    expect(mergePrices(forecast, history)).toEqual([
+      { start: "2026-05-01T23:00:00.000Z", end: "2026-05-02T00:00:00.000Z", price: 1 },
+      ...forecast,
+    ]);
+  });
+
+  it("prices an old session from history instead of zero", () => {
+    const history = [
+      { start: "2026-04-20T00:00:00.000Z", end: "2026-04-20T02:00:00.000Z", price: 2 },
+    ];
+    const [s] = attachCost(
+      [{ start: "2026-04-20T00:00:00.000Z", end: "2026-04-20T01:00:00.000Z", durationHours: 1 }],
+      mergePrices(forecast, history),
+      10,
+    );
+    expect(s!.cost).toBe(20);
+  });
+
+  it("returns history alone when there is no forecast", () => {
+    const history = [{ start: "2026-04-20T00:00:00.000Z", end: "2026-04-20T01:00:00.000Z", price: 2 }];
+    expect(mergePrices([], history)).toEqual(history);
   });
 });

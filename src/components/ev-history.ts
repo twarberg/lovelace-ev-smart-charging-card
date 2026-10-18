@@ -1,7 +1,7 @@
 import { LitElement, css, html, svg, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import "./hover-tooltip.js";
-import { attachCost, detectSessions, fetchHistory, fillDayRange, rollupByDay } from "../lib/history.js";
+import { attachCost, detectSessions, fetchHistory, fillDayRange, mergePrices, pricesFromStateHistory, rollupByDay } from "../lib/history.js";
 import type { DayBucket, PricePoint } from "../lib/history.js";
 import { formatCurrency, formatTimeRange } from "../lib/format.js";
 import { cssVar } from "../lib/theme.js";
@@ -159,8 +159,12 @@ export class EvHistory extends LitElement {
       const pricesAttr = this.entities.priceEntity
         ? ((this.hass.states[this.entities.priceEntity]?.attributes.prices as PricePoint[] | undefined) ?? [])
         : [];
+      const priceHistory = this.entities.priceEntity
+        ? pricesFromStateHistory(history[this.entities.priceEntity] ?? [], end.toISOString())
+        : [];
+      const prices = mergePrices(pricesAttr, priceHistory);
       const kw = this.entities.chargerKw ?? 11.0;
-      const withCost = attachCost(sessions, pricesAttr, kw).filter((s) => (s.kwh ?? 0) > 0);
+      const withCost = attachCost(sessions, prices, kw).filter((s) => (s.kwh ?? 0) > 0);
       this._buckets = fillDayRange(rollupByDay(withCost), start, end);
     } catch (e) {
       this._error = `History fetch failed: ${(e as Error).message}`;
