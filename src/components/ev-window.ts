@@ -1,6 +1,6 @@
 import { LitElement, css, html, unsafeCSS } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { formatCurrency, formatHourMinute, formatKwh } from "../lib/format.js";
+import { formatCurrency, formatHourMinute, formatKwh, resolveCostUnit } from "../lib/format.js";
 import { cssVar } from "../lib/theme.js";
 import type { DeviceEntities, HomeAssistant } from "../types.js";
 
@@ -25,7 +25,7 @@ export class EvWindow extends LitElement {
     const hours = (attrs.hours as string[] | undefined) ?? [];
     const prices = (attrs.hour_prices as number[] | undefined) ?? [];
     const kwh = (attrs.hour_kwh as number[] | undefined) ?? [];
-    const unit = (attrs.cost_unit as string | null) ?? null;
+    const unit = resolveCostUnit(this.hass, this.entities);
     const total = (attrs.estimated_cost as number | null) ?? null;
     const language = this.hass.locale.language;
 
@@ -53,7 +53,7 @@ export class EvWindow extends LitElement {
               return html`
                 <tr>
                   <td>${formatHourMinute(h, this.hass.locale)}</td>
-                  <td>${price.toFixed(2)}</td>
+                  <td>${formatCurrency(price, unit, language)}</td>
                   <td>${formatKwh(slotKwh)}</td>
                   <td>${formatCurrency(cumulative, unit, language)}</td>
                 </tr>
