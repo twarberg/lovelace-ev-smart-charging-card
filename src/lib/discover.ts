@@ -45,6 +45,7 @@ export function discover(hass: HomeAssistant, deviceId: string): DeviceEntities 
   const planStatusState = hass.states[partial.planStatus!];
   const attrs = planStatusState?.attributes ?? {};
   const priceEntity = pickString(attrs.source_price_entity);
+  const chargerEntity = pickString(attrs.charger_switch_entity);
   const chargerKw = pickNumber(attrs.charger_kw);
   const socEntity = pickString(attrs.soc_entity);
   const targetSocEntity = pickString(attrs.target_soc_entity);
@@ -53,6 +54,7 @@ export function discover(hass: HomeAssistant, deviceId: string): DeviceEntities 
   return {
     ...partial,
     ...(priceEntity ? { priceEntity } : {}),
+    ...(chargerEntity ? { chargerEntity } : {}),
     ...(chargerKw !== undefined ? { chargerKw } : {}),
     ...(socEntity ? { socEntity } : {}),
     ...(targetSocEntity ? { targetSocEntity } : {}),
