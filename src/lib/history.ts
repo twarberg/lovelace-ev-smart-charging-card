@@ -44,6 +44,17 @@ export function detectSessions(series: StateSample[], seriesEnd?: string): Sessi
   return out;
 }
 
+// Sessions should reflect energy actually delivered, so prefer the
+// actively_charging series. charge_now is only the plan's intent and stays on
+// even when the charger is offline. actively_charging is never on when the
+// integration has no charging-status entity, so fall back to the plan then.
+export function pickChargingSeries(
+  actual: StateSample[] | undefined,
+  planned: StateSample[],
+): StateSample[] {
+  return actual?.some((s) => s.state === "on") ? actual : planned;
+}
+
 function makeSession(start: string, end: string): Session {
   const ms = new Date(end).getTime() - new Date(start).getTime();
   const durationHours = Math.max(0, ms / 3_600_000);
@@ -65,6 +76,34 @@ export function priceOverRun(prices: PricePoint[], start: string, end: string): 
     totalHours += h;
   }
   return totalHours > 0 ? weighted / totalHours : 0;
+}
+
+// A price sensor's state is the current price, so its state history is a step
+// series of past prices. Each numeric sample holds until the next sample.
+export function pricesFromStateHistory(series: StateSample[], seriesEnd: string): PricePoint[] {
+  const out: PricePoint[] = [];
+  series.forEach((s, i) => {
+    const price = Number(s.state);
+    if (s.state === "" || !Number.isFinite(price)) return;
+    const end = series[i + 1]?.t ?? seriesEnd;
+    if (new Date(end).getTime() <= new Date(s.t).getTime()) return;
+    out.push({ start: s.t, end, price });
+  });
+  return out;
+}
+
+// The price entity's attribute only covers today/tomorrow. Fill everything
+// before that window from state history so older sessions still get a cost.
+export function mergePrices(forecast: PricePoint[], history: PricePoint[]): PricePoint[] {
+  if (forecast.length === 0) return history;
+  const cutoff = Math.min(...forecast.map((p) => new Date(p.start).getTime()));
+  const before: PricePoint[] = [];
+  for (const p of history) {
+    if (new Date(p.start).getTime() >= cutoff) continue;
+    const end = new Date(p.end).getTime() > cutoff ? new Date(cutoff).toISOString() : p.end;
+    before.push({ ...p, end });
+  }
+  return [...before, ...forecast];
 }
 
 export function attachCost(sessions: Session[], prices: PricePoint[], chargerKw: number): Session[] {
